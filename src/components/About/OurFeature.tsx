@@ -39,7 +39,7 @@ const ITEMS: OurFeatures[] = [
     {
         icons: <Microchip className="size-16 text-green-500" />,
         titleTop: "GPU",
-        titleBottom: "RIG Setup",
+        titleBottom: "RIG Setu",
         description:
             "Expert consultation for GPU mining rig configuration, optimization, and maintenance services.",
         bgImg: "/globe-s.svg",
