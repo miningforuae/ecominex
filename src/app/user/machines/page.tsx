@@ -690,7 +690,6 @@ export default function Machines() {
       </Tabs>
 
 
-
     </div>
   );
 }
