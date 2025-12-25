@@ -56,7 +56,6 @@ export default function Wallet() {
   const { withdrawals, isLoading: withdrawalsLoading, error: withdrawalsError } = useSelector(
     (state: RootState) => state.withdrawal
   );
-console.log(withdrawals)
   // ================================
   // 🔥 API CALL ON PAGE LOAD
   // ================================
@@ -421,64 +420,50 @@ console.log(withdrawals)
         </CardHeader>
 
         <CardContent>
-  {withdrawalsLoading && (
-    <p className="text-white">Loading transactions...</p>
-  )}
+          {withdrawalsLoading && (
+            <p className="text-white">Loading transactions...</p>
+          )}
 
-  {!withdrawalsLoading && withdrawals?.length === 0 && (
-    <p className="text-slate-400">No withdrawal history found</p>
-  )}
+          {!withdrawalsLoading && withdrawals?.length === 0 && (
+            <p className="text-slate-400">No withdrawal history found</p>
+          )}
 
-  <div className="space-y-3">
-    {withdrawals?.map((w) => {
-      const isWithdrawal = w.type === "withdrawal";
-      const isDeposit = w.type === "ADMIN_ADD";
+          <div className="space-y-3">
+            {withdrawals?.map((w) => (
+              <div
+                key={w._id}
+                className="flex justify-between items-center p-3 border border-slate-700 rounded-lg"
+                style={{ backgroundColor: "#1b1b1b" }}
+              >
+                <div>
+                  <p className="text-white font-medium">
+                    Withdrawal
+                  </p>
+                  <p className="text-slate-400 text-sm">
+                    {new Date(w.transactionDate).toLocaleDateString()}
+                  </p>
+                </div>
 
-      const title = isWithdrawal
-        ? "Withdrawal"
-        : isDeposit
-        ? "Deposit"
-        : "Transaction";
+                <div className="text-right">
+                  <p className="text-white font-bold">
+                    -${w.amount}
+                  </p>
+                  <p
+                    className={`text-xs ${w.status === "pending"
+                      ? "text-yellow-400"
+                      : w.status === "rejected"
+                        ? "text-[#ff0000] !important"
+                        : "text-emerald-400"
+                      }`}
+                  >
 
-      const amountPrefix = isWithdrawal ? "-" : "+";
-
-      return (
-        <div
-          key={w._id}
-          className="flex justify-between items-center p-3 border border-slate-700 rounded-lg"
-          style={{ backgroundColor: "#1b1b1b" }}
-        >
-          <div>
-            <p className="text-white font-medium">{title}</p>
-            <p className="text-slate-400 text-sm">
-              {new Date(w.transactionDate).toLocaleDateString()}
-            </p>
+                    {w.status}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-
-          <div className="text-right">
-            {/* amount styling unchanged */}
-            <p className="text-white font-bold">
-              {amountPrefix}${Number(w.amount).toLocaleString()}
-            </p>
-
-            {/* status styling unchanged */}
-            <p
-              className={`text-xs ${
-                w.status === "pending"
-                  ? "text-yellow-400"
-                  : w.status === "rejected"
-                  ? "text-[#ff0000]"
-                  : "text-emerald-400"
-              }`}
-            >
-              {w.status}
-            </p>
-          </div>
-        </div>
-      );
-    })}
-  </div>
-</CardContent>
+        </CardContent>
       </Card>
     </div>
   );

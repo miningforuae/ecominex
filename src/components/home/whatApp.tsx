@@ -1,53 +1,48 @@
-"use client";
+import React, { useState, useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
 
-import React, { useState, useEffect } from "react";
-import { MessageCircle } from "lucide-react";
-
-interface FloatingWhatsAppProps {
-  phoneNumber?: string | number;
-}
-
-const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
-  phoneNumber = "+18079074455",
-}) => {
+const FloatingWhatsApp = ({ phoneNumber = '+18079074455' }) => {
   const [isVisible, setIsVisible] = useState(false);
 
+  // Handle scroll event
   useEffect(() => {
     const toggleVisibility = () => {
-      setIsVisible(window.pageYOffset > 300);
+      if (window.pageYOffset > 300) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
     };
 
-    window.addEventListener("scroll", toggleVisibility);
-    toggleVisibility();
+    // Add scroll event listener
+    window.addEventListener('scroll', toggleVisibility);
 
-    return () => window.removeEventListener("scroll", toggleVisibility);
+    // Clean up the event listener
+    return () => {
+      window.removeEventListener('scroll', toggleVisibility);
+    };
   }, []);
 
-  // Make sure we always work with a string
-  const rawPhone = phoneNumber || "+18079074455";
-  const formattedPhone = String(rawPhone).replace(/\D/g, "");
-
-  console.log("phoneNumber prop:", phoneNumber, "→ formatted:", formattedPhone);
-
-  // If for some reason it's still empty, don't render the button
-  if (!formattedPhone) {
-    console.warn("FloatingWhatsApp: invalid phoneNumber", phoneNumber);
-  }
-
-  const whatsappUrl = `https://wa.me/${formattedPhone}`;
+  // Open WhatsApp function
+  const openWhatsApp = () => {
+    // Format phone number (remove any non-numeric characters)
+    const formattedPhone = phoneNumber.replace(/\D/g, '');
+    // Create WhatsApp URL
+    const whatsappUrl = `https://wa.me/${formattedPhone}`;
+    // Open in new tab
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <>
-      {isVisible && formattedPhone && (
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+      {isVisible && (
+        <button
+          onClick={openWhatsApp}
           className="fixed bottom-8 right-8 p-3 rounded-full bg-green-500 text-white shadow-lg transition-all duration-300 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 z-50"
           aria-label="Chat on WhatsApp"
         >
           <MessageCircle className="h-9 w-9" />
-        </a>
+        </button>
       )}
     </>
   );

@@ -8,7 +8,6 @@ export interface Withdrawal {
       lastName: string;
       email: string;
     };
-    type: string;
     amount: number;
     status: 'pending' | 'approved' | 'rejected';
     transactionDate: string;
@@ -36,7 +35,6 @@ export interface Withdrawal {
   
   export interface WithdrawalListResponse {
     withdrawals: Withdrawal[];
-    
     totalPages: number;
     currentPage: number;
     totalWithdrawals: number;

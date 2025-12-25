@@ -57,7 +57,7 @@ const HomeFooter = () => {
 
     const footerLinks = [
         {
-            title: "Company",
+            title: "Quick Links",
             links: [
                 { label: "Home", href: "/" },
                 { label: "About Us", href: "/about" },
@@ -66,21 +66,20 @@ const HomeFooter = () => {
             ],
         },
         {
-            title: "Company",
+            title: "Popular Products",
             links: [
-                { label: "Goldshell KD6 II", href: "/shop/goldshell-kd6-ii/" },
-                { label: "Bitmain Antminer L7", href: "/shop/bitmain-antminer-l7/" },
-                { label: "Goldshell LT6", href: "/shop/goldshell-lt6/" },
-                { label: "Bitmain Antminer S19 XP", href: "/shop/bitmain-antminer-s19-xp/" },
+                { label: "Hosting and management", href: "/" },
+                { label: "Purchases of machines", href: "/" },
+                { label: "Machines", href: "/" },
             ],
         },
         {
-            title: "Company",
+            title: "Popular Products",
             links: [
-                { label: "Bitmain Antminer L7", href: "/shop/bitmain-antminer-l7/" },
-                { label: "AvalonMiner 1246", href: "/shop/avalonminer-1246/" },
-                { label: "Bitmain Antminer S19", href: "/shop/bitmain-antminer-s19/" },
-                { label: "MicroBT WhatsMiner M20S", href: "/shop/microbt-whatsminer-m20s/" },
+                { label: "Privacy Policy", href: "/" },
+                { label: "Terms of Service", href: "/" },
+                { label: "Accessibility", href: "/" },
+                { label: "Cookie Policy", href: "/" },
             ],
         },
        
@@ -121,9 +120,13 @@ return (
 >
   {footerLinks.map((section, index) => (
     <div
-  key={index}
-  className="w-full max-w-[220px] text-center md:text-left"
->
+      key={index}
+      className="w-full max-w-[220px] text-center md:text-left"
+    >
+      {/* Column title */}
+      <h4 className="mb-3 text-sm font-semibold text-white uppercase tracking-wide">
+        {section.title}
+      </h4>
 
       <ul className="space-y-2">
         {section.links.map((link, linkIndex) => (
@@ -159,18 +162,12 @@ return (
               <Facebook className="w-5 h-5" />
             </Link>
 
-             <Link
-                                        href="https://www.tiktok.com/@ecominex.net"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="bg-[#1f1f1f] text-white px-2.5 flex items-center rounded-full hover:bg-[#00a63e] transition-all duration-300 hover:scale-110"
-                                    >
-                                         <svg viewBox="0 0 256 256" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                                            <path fill="#25F4EE" d="M170 80c11 8 24 13 37 14v32c-14-1-27-5-39-12v57c0 36-29 65-65 65s-65-29-65-65 29-65 65-65c5 0 9 .6 13 1v34c-4-2-9-3-14-3-18 0-32 14-32 32s14 32 32 32 32-14 32-32V32h36c2 21 13 39 32 48z" />
-                                            <path fill="#FE2C55" d="M160 80c11 8 24 13 37 14v32c-14-1-27-5-39-12v57c0 36-29 65-65 65s-65-29-65-65 29-65 65-65c5 0 9 .6 13 1v34c-4-2-9-3-14-3-18 0-32 14-32 32s14 32 32 32 32-14 32-32V32h30v6c2 19 12 35 33 42z" />
-                                            <path fill="#fff" d="M165 81c11 8 24 13 38 14v32c-15-1-28-5-41-12v56c0 34-28 62-62 62s-62-28-62-62 28-62 62-62c4 0 8 .5 12 1v34c-4-2-9-3-14-3-17 0-31 14-31 31s14 31 31 31 31-14 31-31V31h36c1 20 12 38 31 47z" />
-                                        </svg>
-                                    </Link>
+            <Link
+              href="https://www.tiktok.com/@ecominex.net"
+              className="bg-[#1f1f1f] p-3 rounded-full hover:bg-[#00a63e] transition hover:scale-110"
+            >
+              <Music2 className="w-5 h-5" />
+            </Link>
 
             <Link
               href="https://www.instagram.com/ecominex/"

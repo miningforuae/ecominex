@@ -104,7 +104,7 @@ const HomeNavbar = () => {
                 )}
               </div>
 
-              <Link href="/booking">
+              <Link href="/contactUs">
                 <button className="!font-semibold border-[1px] px-4 py-2 text-[13.5px] rounded-full border-green-500 cursor-pointer hover:bg-green-500 hover:text-black transition-all">
                   Book Appointment
                 </button>

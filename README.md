@@ -87,3 +87,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 ### Version 0.1.0 - Initial Release - [Aug 3, 2023]
 
 - Initial release of TailAdmin Next.
+<<<<<<< HEAD
+=======
+"# ecominex" 
+>>>>>>> a649cedcb295f9cf73c52f70f78147428daa432d

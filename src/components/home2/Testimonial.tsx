@@ -26,7 +26,7 @@ const ITEMS: Testimonial[] = [
         name: "Patrick Stone",
         first: "Patrick",
         last: "Stone",
-        avatar: "/Testi2.webp",
+        avatar: "/Testi1.jpg",
         text:
             "I've bought all my miners with them and never experienced any problem. The logistic and shipping was fast.",
         stars: 5,

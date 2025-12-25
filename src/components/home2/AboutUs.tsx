@@ -119,7 +119,7 @@ export default function AboutUs({
 
           {buttonText && (
             <div className="mt-2">
-              <Link href="/about">
+              <Link href="/About">
                 <button className="font-semibold border px-5 sm:px-7 py-2.5 sm:py-3 text-xs sm:text-[13.5px] rounded-full border-green-500 text-green-500 hover:bg-green-500 hover:text-black transition-all cursor-pointer">
                   {buttonText}
                 </button>
