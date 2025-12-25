@@ -57,7 +57,7 @@ const HomeFooter = () => {
 
     const footerLinks = [
         {
-            title: "Company",
+            title: "Quick Links",
             links: [
                 { label: "Home", href: "/" },
                 { label: "About Us", href: "/about" },
@@ -66,7 +66,7 @@ const HomeFooter = () => {
             ],
         },
         {
-            title: "Company",
+            title: "Popular Products",
             links: [
                 { label: "Goldshell KD6 II", href: "/shop/goldshell-kd6-ii/" },
                 { label: "Bitmain Antminer L7", href: "/shop/bitmain-antminer-l7/" },
@@ -75,7 +75,7 @@ const HomeFooter = () => {
             ],
         },
         {
-            title: "Company",
+            title: "Popular Products",
             links: [
                 { label: "Bitmain Antminer L7", href: "/shop/bitmain-antminer-l7/" },
                 { label: "AvalonMiner 1246", href: "/shop/avalonminer-1246/" },
@@ -121,9 +121,13 @@ return (
 >
   {footerLinks.map((section, index) => (
     <div
-  key={index}
-  className="w-full max-w-[220px] text-center md:text-left"
->
+      key={index}
+      className="w-full max-w-[220px] text-center md:text-left"
+    >
+      {/* Column title */}
+      <h4 className="mb-3 text-sm font-semibold text-white uppercase tracking-wide">
+        {section.title}
+      </h4>
 
       <ul className="space-y-2">
         {section.links.map((link, linkIndex) => (
