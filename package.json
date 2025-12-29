@@ -26,6 +26,7 @@
     "axios": "^1.7.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "ethers": "^6.16.0",
     "framer-motion": "^11.18.2",
     "js-cookie": "^3.0.5",
     "jsvectormap": "^1.5.3",
@@ -52,6 +53,7 @@
     "swiper": "^11.0.5",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "tronweb": "^6.1.1",
     "use-debounce": "^10.0.4",
     "xlsx": "^0.18.5"
   },

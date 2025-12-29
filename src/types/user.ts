@@ -1,4 +1,5 @@
 export interface User {
+  _id:string;
   id: string;
   firstName?: string;
   lastName: string;
@@ -7,7 +8,7 @@ export interface User {
   role: 'user' | 'admin';
   phoneNumber:string;
   mainBalance:string;
-    referralCode?: string;
+  referralCode?: string;
 
 }
 
@@ -15,6 +16,15 @@ export interface VerifyOtp {
   email: string;
   otp: string;
 }
+
+export interface ResendOtp {
+  email: string;
+}
+
+export interface ResendOtpResponse {
+  message: string; // match what your API returns
+}
+
 
 export interface LoginCredentials {
   email: string;

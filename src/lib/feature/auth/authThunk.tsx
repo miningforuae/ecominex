@@ -8,11 +8,17 @@ import {
   VerifyOtp,
   ForgotPasswordRequest,
   ResetPasswordRequest,
-  ChangePasswordRequest
+  ChangePasswordRequest,
+  ResendOtp,
+  ResendOtpResponse
 } from '../../../types/user';
+
+
 
 export const authApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
+
+
 
     register: builder.mutation<AuthResponse, RegisterCredentials>({
       query: (credentials) => ({
@@ -23,6 +29,16 @@ export const authApiSlice = baseApiSlice.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
+
+
+resendOtp: builder.mutation<ResendOtpResponse, ResendOtp>({
+  query: (body) => ({
+    url: 'api/v1/resend-otp',
+    method: 'POST',
+    body,
+  }),
+}),
+
 
     verifyotp: builder.mutation<AuthResponse, VerifyOtp>({
       query: (credentials) => ({
@@ -148,5 +164,6 @@ export const {
   useReferralsQuery,
   useChangePasswordMutation,
   useForgotPasswordMutation,
-  useResetPasswordMutation
+  useResetPasswordMutation,
+  useResendOtpMutation,
 } = authApiSlice;

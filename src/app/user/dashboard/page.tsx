@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { validateWalletAddress } from "@/utils/walletValidation";
 import { fetchUserWithdrawals } from "@/lib/feature/withdraw/withdrawalSlice";
 import { DollarSign, Server, TrendingUp, Users, ArrowUpFromLine, ArrowDownToLine } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -15,25 +16,6 @@ import { AppDispatch, RootState } from '@/lib/store/store';
 import { useSelector, useDispatch } from "react-redux";
 import { requestWithdrawal } from "@/lib/feature/withdraw/withdrawalSlice";
 import "react-toastify/dist/ReactToastify.css";
-
-interface UserBalance {
-  balances: {
-    adminAdd: number;
-    mining: number;
-    total: number;
-  };
-  lastUpdated: string;
-  machines: {
-    count: number;
-    details: any[];
-  };
-}
-interface Referral {
-  id: string;
-  discount: number;
-  referralStatus: "active" | "inactive"; 
-}
-
 
 
 export default function Dashboard() {
@@ -56,7 +38,7 @@ export default function Dashboard() {
   const { withdrawals, isLoading: withdrawalsLoading, error: withdrawalsError } = useSelector(
     (state: RootState) => state.withdrawal
   );
-
+console.log(withdrawals)
   const { referralData, loading, error } = useSelector(
     (state: RootState) => state.profit.referrals
   );
@@ -69,69 +51,70 @@ export default function Dashboard() {
 
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
-
+const auth = useSelector((state: RootState) => state.auth);
   useEffect(() => {
+    console.log("Auth state after verification/login:", auth);
+    console.log(user)
     if (user?.id) {
       dispatch(fetchUserMachines(user.id));
       dispatch(getUserBalance(user.id));
       dispatch(getReferralById(user.id));
       if (user.email) dispatch(fetchUserWithdrawals({ email: user.email }));
     }
-  }, [dispatch, user?.id]);
+  }, [dispatch, user?.id,auth]);
 
-  const handleWithdrawrequest = async () => {
-    // Basic validation
-    if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
-      toast.error("Minimun Amount is 50$")
-      console.log("testing")
-      return;
-    }
-    if (!withdrawAddress || !withdrawNetwork) {
-      toast.error("Please fill all fields");
-      return;
-    }
-    if (!user?.id || !user?.email) {
-      toast.error("User not authenticated");
-      return;
-    }
-
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      amount: parseFloat(withdrawAmount),
-      walletAddress: withdrawAddress,
-      network: withdrawNetwork,
-    };
-
-    try {
-      // Dispatch the thunk and unwrap the result
-      const result = await dispatch(requestWithdrawal(payload)).unwrap();
-
-      // Success message from API if available
-      toast.success(result?.message || "Withdrawal request submitted successfully");
-
-      // Clear the form and close modal
-      setIsWithdrawOpen(false);
-      setWithdrawAmount("");
-      setWithdrawAddress("");
-      setWithdrawNetwork("");
-    } catch (error: any) {
-      // Frontend-friendly error handling
-      let errorMessage = "Failed to submit withdrawal request";
-
-      // If API returned a structured error (string or object)
-      if (typeof error === "string") {
-        errorMessage = error;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.data?.message) {
-        errorMessage = error.data.message;
-      }
-
-      console.error("Withdrawal API Error:", error); // For debugging
-      toast.error(errorMessage);
-    }
-  };
+ const handleWithdrawrequest = async () => {
+   if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
+     toast.error("Minimun Amount is 50$");
+     return;
+   }
+ 
+   if (!withdrawAddress || !withdrawNetwork) {
+     toast.error("Please fill all fields");
+     return;
+   }
+ 
+ if (!withdrawNetwork) {
+   toast.error("Please select a network");
+   return;
+ }
+ 
+ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
+   toast.error("Please enter a valid wallet address for the selected network.");
+   return;
+ }
+ 
+     if (!user?.id || !user?.email) {
+       toast.error("User not authenticated");
+       return;
+     }
+ 
+     const payload = {
+       userId: user.id,
+     email: user.email,
+     amount: parseFloat(withdrawAmount),
+     walletAddress: withdrawAddress.trim(),
+     network: withdrawNetwork,
+   };
+ 
+   try {
+     const result = await dispatch(requestWithdrawal(payload)).unwrap();
+     toast.success(result?.message || "Withdrawal request submitted successfully");
+     setIsWithdrawOpen(false);
+     setWithdrawAmount("");
+     setWithdrawAddress("");
+     setWithdrawNetwork("");
+   } catch (error: any) {
+     let errorMessage = "Failed to submit withdrawal request";
+ 
+     if (typeof error === "string") errorMessage = error;
+     else if (error?.message) errorMessage = error.message;
+     else if (error?.data?.message) errorMessage = error.data.message;
+ 
+     console.error("Withdrawal API Error:", error);
+     toast.error(errorMessage);
+   }
+ };
 
 
   const depositAddresses = {
@@ -438,33 +421,46 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
 
       <Card className=" border-slate-700/50 shadow-lg" style={{ backgroundColor: "#1b1b1b" }}>
         <CardHeader>
-          <CardTitle className="text-white">Recent Activity</CardTitle>
+          <CardTitle className="text-white">Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {withdrawalsLoading ? (
-              <p className="text-white">Loading...</p>
-            ) : withdrawalsError ? (
-              <p className="text-red-500">Failed to load withdrawals</p>
-            ) : (
-              withdrawals?.slice(0, 3).map((w, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between border-b border-slate-700/30 pb-3 last:border-0 last:pb-0"
-                >
-                  <div>
-                    <p className="font-medium text-white">Withdrawal Request</p>
-                    <p className="text-sm text-slate-400">
-                      ${w.amount} —
-                    </p>
-                  </div>
+  <p className="text-white">Loading...</p>
+) : withdrawalsError ? (
+  <p className="text-red-500">Failed to load withdrawals</p>
+) : (
+  withdrawals?.slice(0, 3).map((w) => {
+    const isWithdrawal = w.type === "withdrawal";
+    const isDeposit   = w.type === "ADMIN_ADD";
 
-                  <p className="text-xs text-slate-500">
-                    {new Date(w.transactionDate).toLocaleString()}
-                  </p>
-                </div>
-              ))
-            )}
+    const title = isWithdrawal
+      ? "Withdrawal"
+      : isDeposit
+      ? "Deposit"
+      : "Transaction";
+
+    const amountPrefix = isWithdrawal ? "-" : "+"; // default + for others
+
+    return (
+      <div
+        key={w._id || `${w.type}-${w.amount}-${w.transactionDate}`}
+        className="flex items-center justify-between border-b border-slate-700/30 pb-3 last:border-0 last:pb-0"
+      >
+        <div>
+          <p className="font-medium text-white">{title}</p>
+          <p className="text-sm text-slate-400">
+            {amountPrefix}${Number(w.amount).toLocaleString()}
+          </p>
+        </div>
+
+        <p className="text-xs text-slate-500">
+          {new Date(w.transactionDate).toLocaleString()}
+        </p>
+      </div>
+    );
+  })
+)}
           </div>
         </CardContent>
       </Card>

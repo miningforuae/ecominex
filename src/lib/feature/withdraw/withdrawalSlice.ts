@@ -23,18 +23,29 @@ import {
 export const requestWithdrawal = createAsyncThunk<
   WithdrawalResponse,
   WithdrawalRequest,
-  { rejectValue: string }
+  { state: RootState; rejectValue: string }
 >(
-  'withdrawal/request',
-  async (withdrawalData, { rejectWithValue }) => {
+  "withdrawal/request",
+  async (withdrawalData, { getState, rejectWithValue }) => {
     try {
+      const state = getState();
+      const token = state.auth.token;
+
       const response = await axiosInstance.post<WithdrawalResponse>(
-        '/api/v1/withdrawals/request',
-        withdrawalData
+        "/api/v1/withdrawals/request",
+        withdrawalData,
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined,
+        }
       );
+
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to request withdrawal');
+      return rejectWithValue(
+        error?.response?.data?.message || "Failed to request withdrawal"
+      );
     }
   }
 );

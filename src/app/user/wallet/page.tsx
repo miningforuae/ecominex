@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store/store";
-
+import { validateWalletAddress } from "@/utils/walletValidation";
 import { getUserBalance } from "@/lib/feature/userMachine/balanceSlice";
 import { fetchUserWithdrawals } from "@/lib/feature/withdraw/withdrawalSlice";
 import { requestWithdrawal } from "@/lib/feature/withdraw/withdrawalSlice";
@@ -45,7 +45,7 @@ export default function Wallet() {
     (state: RootState) => state.auth
   );
 
-
+console.log("something ",user)
   const { userBalance, loading: balanceLoading, error: balanceError } = useSelector(
     (state: RootState) => state.balance
   );
@@ -93,16 +93,27 @@ console.log(withdrawals)
   };
 
 
-  const handleWithdraw = async () => {
-    // Basic validation
-    if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
-      toast.error("Minimum withdrawal amount is $59.20");
-      return;
-    }
-    if (!withdrawAddress || !withdrawNetwork) {
-      toast.error("Please fill all fields");
-      return;
-    }
+const handleWithdrawrequest = async () => {
+  if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
+    toast.error("Minimun Amount is 50$");
+    return;
+  }
+
+  if (!withdrawAddress || !withdrawNetwork) {
+    toast.error("Please fill all fields");
+    return;
+  }
+
+if (!withdrawNetwork) {
+  toast.error("Please select a network");
+  return;
+}
+
+if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
+  toast.error("Please enter a valid wallet address for the selected network.");
+  return;
+}
+
     if (!user?.id || !user?.email) {
       toast.error("User not authenticated");
       return;
@@ -110,41 +121,31 @@ console.log(withdrawals)
 
     const payload = {
       userId: user.id,
-      email: user.email,
-      amount: parseFloat(withdrawAmount),
-      walletAddress: withdrawAddress,
-      network: withdrawNetwork,
-    };
-
-    try {
-      // Dispatch the thunk and unwrap the result
-      const result = await dispatch(requestWithdrawal(payload)).unwrap();
-
-      // Success message from API if available
-      toast.success(result?.message || "Withdrawal request submitted successfully");
-
-      // Clear the form and close modal
-      setIsWithdrawOpen(false);
-      setWithdrawAmount("");
-      setWithdrawAddress("");
-      setWithdrawNetwork("");
-    } catch (error: any) {
-      // Frontend-friendly error handling
-      let errorMessage = "Failed to submit withdrawal request";
-
-      // If API returned a structured error (string or object)
-      if (typeof error === "string") {
-        errorMessage = error;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.data?.message) {
-        errorMessage = error.data.message;
-      }
-
-      console.error("Withdrawal API Error:", error); // For debugging
-      toast.error(errorMessage);
-    }
+    email: user.email,
+    amount: parseFloat(withdrawAmount),
+    walletAddress: withdrawAddress.trim(),
+    network: withdrawNetwork,
   };
+
+  try {
+    const result = await dispatch(requestWithdrawal(payload)).unwrap();
+    toast.success(result?.message || "Withdrawal request submitted successfully");
+    setIsWithdrawOpen(false);
+    setWithdrawAmount("");
+    setWithdrawAddress("");
+    setWithdrawNetwork("");
+  } catch (error: any) {
+    let errorMessage = "Failed to submit withdrawal request";
+
+    if (typeof error === "string") errorMessage = error;
+    else if (error?.message) errorMessage = error.message;
+    else if (error?.data?.message) errorMessage = error.data.message;
+
+    console.error("Withdrawal API Error:", error);
+    toast.error(errorMessage);
+  }
+};
+
 
 
 
@@ -350,7 +351,7 @@ console.log(withdrawals)
                 />
 
                 <Button
-                  onClick={handleWithdraw}
+                  onClick={handleWithdrawrequest}
                   className="w-full bg-red-600 text-white text-lg py-3" style={{ backgroundColor: "#22c55e" }}
                 >
                   Submit Withdrawal

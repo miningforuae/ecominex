@@ -33,7 +33,7 @@ export default function LoginPage() {
     try {
       const userData = await login({ email, password }).unwrap();
 
-      console.log(userData);
+      console.log("user details",userData);
       
       dispatch(setCredentials(userData));
       toast.success("Login successful!");

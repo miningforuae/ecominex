@@ -111,41 +111,56 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword)
-      return toast.error("Passwords do not match!");
-    if (!agreedToTerms)
-      return toast.error("Please agree to the terms and conditions.");
-    if (!selectedCountry) return toast.error("Please select a country!");
-    if (!validatePhoneNumber(phoneNumber, selectedCountry.value))
-      return toast.error("Please enter a valid phone number!");
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    const formattedPhone = `+${selectedCountry.dialCode}${phoneNumber.replace(
-      /\D/g,
-      ""
-    )}`;
+  if (password !== confirmPassword)
+    return toast.error("Passwords do not match!");
+  if (!agreedToTerms)
+    return toast.error("Please agree to the terms and conditions.");
+  if (!selectedCountry) return toast.error("Please select a country!");
+  if (!validatePhoneNumber(phoneNumber, selectedCountry.value))
+    return toast.error("Please enter a valid phone number!");
 
-    try {
-      const res = await register({
-        firstName,
-        lastName,
-        email,
-        password,
-        country: selectedCountry.value,
-        countryName: selectedCountry.fullName,
-        phoneNumber: formattedPhone,
-        referralCode: referralCode,
-      }).unwrap();
-      console.log(res);
-      
-      localStorage.setItem("VerfiyEmail" , res.email)
-      toast.success("Registration successful!");
-      router.push("/auth/two-step-verification");
-    } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+  const formattedPhone = `+${selectedCountry.dialCode}${phoneNumber.replace(
+    /\D/g,
+    ""
+  )}`;
+
+  try {
+    const res = await register({
+      firstName,
+      lastName,
+      email,
+      password,
+      country: selectedCountry.value,
+      countryName: selectedCountry.fullName,
+      phoneNumber: formattedPhone,
+      referralCode: referralCode,
+    }).unwrap();
+
+    console.log("register response:", res);
+
+    localStorage.setItem("VerfiyEmail", res.email);
+    toast.success("Registration successful! Please verify your email.");
+    router.push("/auth/two-step-verification");
+  } catch (error: any) {
+    console.error("Register API error:", error);
+
+    let errorMessage = "Something went wrong. Please try again.";
+
+    // RTK Query (fetchBaseQuery) error shape: { status, data: { message } }
+    if (error?.data?.message) {
+      errorMessage = error.data.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    } else if (error?.message) {
+      errorMessage = error.message;
     }
-  };
+
+    toast.error(errorMessage);
+  }
+};
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#0a0f1a] via-[#0f172a] to-[#020617] text-white flex flex-col pb-16">
