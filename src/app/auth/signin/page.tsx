@@ -12,6 +12,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { store } from "@/lib/store/store";
 import { motion } from "framer-motion"; // 🪄 Animation library
 
+
+
 interface LoginError {
   status?: number;
   data?: {
@@ -24,6 +26,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
   const [login, { isLoading }] = useLoginMutation();
   const router = useRouter();
   const dispatch = useDispatch();
@@ -33,27 +36,47 @@ export default function LoginPage() {
     try {
       const userData = await login({ email, password }).unwrap();
 
-      console.log("user details",userData);
-      
-      dispatch(setCredentials(userData));
-      toast.success("Login successful!");
-      setTimeout(() => {
-        const authState = store.getState().auth;
-        if(userData.user.role === "user"){
-          router.push("/user/dashboard");
-        }else{
-          router.push("/Dashboard");
+      console.log("login response", userData);
 
+      // 1) 2FA ENABLED → send OTP and go to two-step page
+      if (userData.requires2FA) {
+        // store info for OTP step
+        localStorage.setItem("TwoFAUserId", userData.userId || "");
+        localStorage.setItem("TwoFAEmail", userData.email || email);
+        localStorage.setItem("TwoFAType", "login");
+
+        toast.info("A verification code has been sent to your email.");
+        router.push("/auth/two-step-verification");
+        return;
+      }
+
+      // 2) NORMAL LOGIN (no 2FA)
+      if (!userData.user || !userData.token) {
+        toast.error("Login response invalid. Please try again.");
+        return;
+      }
+
+      // if setCredentials expects { user, token }
+      dispatch(setCredentials({ user: userData.user, token: userData.token }));
+
+      toast.success("Login successful!");
+
+      localStorage.setItem("IsAuthenticate", "true");
+      localStorage.setItem("token", userData.token);
+
+      setTimeout(() => {
+        if (userData.user.role === "user") {
+          router.push("/user/dashboard");
+        } else {
+          router.push("/Dashboard");
         }
       }, 100);
-      localStorage.setItem("IsAuthenticate" , "true")
-      localStorage.setItem("token" , userData.token)
     } catch (error) {
       const err = error as LoginError;
       if (err?.status === 404) {
         toast.error("User not found, please sign up.");
-      } else if (err?.status === 400) {
-        toast.error("Invalid email or password.");
+      } else if (err?.status === 400 || err?.status === 401) {
+        toast.error(err?.data?.message || "Invalid email or password.");
       } else {
         toast.error("Login failed. Please try again later.");
       }

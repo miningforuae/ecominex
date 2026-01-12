@@ -9,6 +9,7 @@ export interface User {
   phoneNumber:string;
   mainBalance:string;
   referralCode?: string;
+  twoFactorEnabled?: boolean;
 
 }
 
@@ -25,6 +26,15 @@ export interface ResendOtpResponse {
   message: string; // match what your API returns
 }
 
+export interface Toggle2FARequest {
+  userId: string;
+  enabled: boolean;
+}
+
+export interface Toggle2FAResponse {
+  success: boolean;
+  message: string;
+}
 
 export interface LoginCredentials {
   email: string;
@@ -39,6 +49,7 @@ export interface RegisterCredentials extends Omit<User, '_id'> {
 export interface AuthResponse {
   user: User;
   token: string;
+  
 }
 
 // types/auth.ts
@@ -66,6 +77,15 @@ export interface ReferralResponse {
   referrals: Referral[];
 }
 
+export interface LoginResponseBase {
+  success: boolean;
+  user?: any;
+  token?: string;
+  requires2FA: boolean;
+  email?: string;
+  userId?: string;
+  message?: string;
+}
 
 export interface ForgotPasswordRequest {
   email: string;
@@ -80,4 +100,13 @@ export interface ChangePasswordRequest {
   userId: string;
   currentPassword: string;
   newPassword: string;
+}
+
+
+export interface ResendLoginOtpRequest {
+  email: string;
+}
+
+export interface ResendLoginOtpResponse {
+  message: string;
 }

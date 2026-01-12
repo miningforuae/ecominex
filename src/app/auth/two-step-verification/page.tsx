@@ -6,6 +6,8 @@ import toast, { Toaster } from "react-hot-toast";
 import {
   useVerifyotpMutation,
   useResendOtpMutation,
+  useVerifyLoginOtpMutation,
+  useResendLoginOtpMutation,
 } from "@/lib/feature/auth/authThunk";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/lib/feature/auth/authSlice";
@@ -15,9 +17,34 @@ const TwoStepVerification: React.FC = () => {
   const dispatch = useDispatch();
   const [codes, setCodes] = useState<string[]>(Array(6).fill(""));
 
-  // Separate loading flags for each mutation
-  const [verifyotp, { isLoading: isVerifyLoading }] = useVerifyotpMutation();
-  const [resendOtp, { isLoading: isResendLoading }] = useResendOtpMutation();
+  // Signup/email verification
+  const [verifyotp, { isLoading: isSignupVerifyLoading }] =
+    useVerifyotpMutation();
+
+  // Login 2FA verification
+  const [verifyLoginOtp, { isLoading: isLoginVerifyLoading }] =
+    useVerifyLoginOtpMutation();
+
+  // Resend for signup verification
+  const [resendOtp, { isLoading: isResendSignupLoading }] =
+    useResendOtpMutation();
+
+  // Resend for login 2FA
+  const [resendLoginOtp, { isLoading: isResendLoginLoading }] =
+    useResendLoginOtpMutation();
+
+  const isSubmitting = isSignupVerifyLoading || isLoginVerifyLoading;
+  const isResendLoading = isResendSignupLoading || isResendLoginLoading;
+
+  // Detect mode once (login 2FA vs signup)
+  const twoFAUserId =
+    typeof window !== "undefined" ? localStorage.getItem("TwoFAUserId") : null;
+  const twoFAEmail =
+    typeof window !== "undefined" ? localStorage.getItem("TwoFAEmail") : null;
+  const signupEmail =
+    typeof window !== "undefined" ? localStorage.getItem("VerfiyEmail") : null;
+
+  const isLogin2FA = !!twoFAUserId && !!twoFAEmail;
 
   useEffect(() => {
     const firstInput = document.getElementById("code-0");
@@ -50,13 +77,6 @@ const TwoStepVerification: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullCode = codes.join("");
-    const email = localStorage.getItem("VerfiyEmail") || "";
-
-    if (!email) {
-      toast.error("Email not found. Please register again.");
-      router.push("/auth/signup");
-      return;
-    }
 
     if (fullCode.length < 6) {
       toast.error("⚠️ Please enter a 6-digit code.");
@@ -64,38 +84,78 @@ const TwoStepVerification: React.FC = () => {
     }
 
     try {
-      const response = await verifyotp({ email, otp: fullCode }).unwrap();
-      // response should contain { user, token }
+      // LOGIN 2FA FLOW
+      if (isLogin2FA && twoFAUserId && twoFAEmail) {
+        const res = await verifyLoginOtp({
+          userId: twoFAUserId,
+          otp: fullCode,
+        }).unwrap();
 
-      dispatch(setCredentials(response));
+        dispatch(setCredentials({ user: res.user, token: res.token }));
+        localStorage.setItem("IsAuthenticate", "true");
+        localStorage.setItem("token", res.token);
+
+        // clean up 2FA state
+        localStorage.removeItem("TwoFAUserId");
+        localStorage.removeItem("TwoFAEmail");
+        localStorage.removeItem("TwoFAType");
+
+        toast.success("✅ Verification successful!");
+
+        if (res.user?.role === "admin") router.push("/Dashboard");
+        else router.push("/user/dashboard");
+
+        return;
+      }
+
+      // SIGNUP / EMAIL VERIFICATION FLOW
+      if (!signupEmail) {
+        toast.error("Email not found. Please register again.");
+        router.push("/auth/signup");
+        return;
+      }
+
+      const response = await verifyotp({
+        email: signupEmail,
+        otp: fullCode,
+      }).unwrap();
+
+      dispatch(
+        setCredentials({ user: response.user, token: response.token })
+      );
       localStorage.setItem("IsAuthenticate", "true");
       localStorage.setItem("token", response.token);
       localStorage.removeItem("VerfiyEmail");
 
       toast.success("✅ Verification successful!");
 
-      if (response.user?.role === "admin") {
-        router.push("/Dashboard");
-      } else {
-        router.push("/user/dashboard");
-      }
-    } catch (err) {
+      if (response.user?.role === "admin") router.push("/Dashboard");
+      else router.push("/user/dashboard");
+    } catch (err: any) {
       console.error(err);
-      toast.error("❌ Invalid or expired OTP. Please try again.");
+      toast.error(
+        err?.data?.message || "❌ Invalid or expired OTP. Please try again."
+      );
     }
   };
 
   const handleResend = async () => {
-    const email = localStorage.getItem("VerfiyEmail") || "";
-
-    if (!email) {
-      toast.error("Email not found. Please register again.");
-      router.push("/auth/signup");
-      return;
-    }
-
     try {
-      await resendOtp({ email }).unwrap();
+      // LOGIN 2FA RESEND
+      if (isLogin2FA && twoFAEmail) {
+        await resendLoginOtp({ email: twoFAEmail }).unwrap();
+        toast.success("📧 A new login code has been sent to your email.");
+        return;
+      }
+
+      // SIGNUP RESEND
+      if (!signupEmail) {
+        toast.error("Email not found. Please try again.");
+        router.push("/auth/signin");
+        return;
+      }
+
+      await resendOtp({ email: signupEmail }).unwrap();
       toast.success("📧 A new verification code has been sent to your email.");
     } catch (err) {
       console.error("Resend OTP error:", err);
@@ -109,10 +169,12 @@ const TwoStepVerification: React.FC = () => {
 
       <div className="w-full max-w-md bg-[#181e26] border border-[#2a323f] rounded-2xl shadow-lg p-6 sm:p-8 md:p-10 md:py-12 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-3xl font-extrabold text-[#4ade80] mb-2">
-          Verify Your Account
+          {isLogin2FA ? "Two-Factor Authentication" : "Verify Your Account"}
         </h1>
         <p className="text-xs sm:text-sm md:text-base text-[#bfbfbf] mb-6 sm:mb-8">
-          Enter the 6-digit code sent to your registered email.
+          {isLogin2FA
+            ? "Enter the 6-digit code we sent to your email to complete login."
+            : "Enter the 6-digit code sent to your registered email to verify your account."}
         </p>
 
         <form
@@ -152,10 +214,10 @@ const TwoStepVerification: React.FC = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isVerifyLoading}
+            disabled={isSubmitting}
             className="w-full py-2.5 sm:py-3 mt-1 sm:mt-2 rounded-lg bg-[#4ade80] text-gray-900 font-semibold hover:bg-[#3bd570] transition disabled:opacity-70"
           >
-            {isVerifyLoading ? "Verifying..." : "Verify"}
+            {isSubmitting ? "Verifying..." : "Verify"}
           </button>
 
           <span className="text-[10px] sm:text-xs text-gray-400 mt-2 sm:mt-3">

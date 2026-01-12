@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShoppingCart, Cpu, Loader2, PieChart } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
+import {type ToastContentProps } from "react-toastify";
+import Link from "next/link";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import type { UserShare } from "@/lib/feature/shareMachine/shareMachineSlice";
 import { fetchUserMachines } from "@/lib/feature/userMachine/usermachineApi";
 import { getUserShareDetails } from "@/lib/feature/shareMachine/shareMachineSlice";
 import { useGetAllMiningMachinesQuery } from "@/lib/feature/Machines/miningMachinesApiSlice";
@@ -19,20 +22,26 @@ export default function Machines() {
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const { userMachines } = useSelector((state: RootState) => state.userMachine);
-  const { userShares } = useSelector((state: RootState) => state.shareMachine); // Update with your actual slice
+  const {
+  userShares,
+  specialMachine,
+  loading: specialLoading,
+  error: specialError,
+} = useSelector((state: RootState) => state.shareMachine); // Update with your actual slice
 
   const [isLoading, setIsLoading] = useState(false);
   const [hasMachines, setHasMachines] = useState(false);
   const [hasShares, setHasShares] = useState(false);
   const [purchasingMachineId, setPurchasingMachineId] = useState<string | null>(null);
-
+const [sellAmounts, setSellAmounts] = useState<Record<string, number>>({});
+// key by machineName or a dedicated machineId if you add one
   // Fetch all mining machines for marketplace
   const { data: allMachines, isLoading: machinesLoading, error: machinesError } = useGetAllMiningMachinesQuery();
+const getShareKey = (share: AggregatedShare) => share.machineName; // or share.machineId
+  // const { specialMachine, loading: specialLoading, error: specialError } =
+  //   useSelector((state: RootState) => state.shareMachine);
 
-  const { specialMachine, loading: specialLoading, error: specialError } =
-    useSelector((state: RootState) => state.shareMachine);
-
-  console.log(userMachines)
+  console.log(userShares)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -122,47 +131,175 @@ export default function Machines() {
   };
 
 
+const handleSellMachine = async (machine: any) => {
+  try {
+    const salePrice =
+      parseFloat(machine.priceRange.toString().replace("$", "")) * 0.9;
 
+    const result = await dispatch(sellUserMachine(machine._id)).unwrap();
 
-  // Handle machine purchase
-  const handlePurchaseMachine = async (machineId: string, machineName: string, price: number) => {
-    if (!user || !isAuthenticated) {
-      toast.error("Please login to purchase a machine");
-      return;
+    toast.success(
+      result?.message ||
+        `Machine sold for $${salePrice.toFixed(2)} (10% fee deducted)`
+    );
+  } catch (err: any) {
+    console.error("SELL ERROR:", err);
+    toast.error(err?.message || "Failed to sell machine");
+  }
+};
+
+const showConfirmToast = (
+  message: string,
+  onConfirm: () => Promise<void> | void
+) => {
+  toast(
+    (t: ToastContentProps) => (
+      <div className="text-sm text-slate-100">
+        <p className="mb-3">{message}</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => t.closeToast()}
+            className="px-3 py-1.5 text-xs rounded bg-slate-700 hover:bg-slate-600 text-slate-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await onConfirm();
+              } finally {
+                t.closeToast();
+              }
+            }}
+            className="px-3 py-1.5 text-xs rounded bg-red-500 hover:bg-red-600 text-white"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    ),
+    {
+      autoClose: false,
+      closeOnClick: false,
+      draggable: false,
+      position: "top-center",
+      className: "bg-[#050810] border border-slate-800",
     }
+  );
+};
 
-    try {
-      setPurchasingMachineId(machineId);
+const handleSellShares = async (share: AggregatedShare) => {
+  const key = getShareKey(share);
+  const amountToSell = sellAmounts[key] ?? 0;
+
+  if (!user?.id) {
+    toast.error("User not found");
+    return;
+  }
+  if (!amountToSell || amountToSell <= 0) {
+    toast.error("Enter how many shares you want to sell");
+    return;
+  }
+  if (amountToSell > share.numberOfShares) {
+    toast.error("You cannot sell more shares than you own");
+    return;
+  }
+
+  try {
+    let remaining = amountToSell;
+
+    const sortedPurchases = [...share.purchases].sort(
+      (a, b) =>
+        new Date(a.purchaseDate).getTime() -
+        new Date(b.purchaseDate).getTime()
+    );
+
+    for (const p of sortedPurchases) {
+      if (remaining <= 0) break;
+      const canSell = Math.min(p.numberOfShares, remaining);
+      if (canSell <= 0) continue;
 
       await dispatch(
-        purchaseAndAssignMachine({
-          userId: user.id,
-          machineId,
-          quantity: 1,    // REQUIRED
+        sellSharePurchase({
+          sharePurchaseId: p.id,
+          payload: { numberOfSharesToSell: canSell },
         })
       ).unwrap();
 
-      toast.success(`Successfully purchased!`);
-
-      if (user.email) {
-        await dispatch(fetchUserMachines(user.email)).unwrap();
-      }
-    } catch (error: any) {
-      console.error("Error purchasing machine:", error);
-      toast.error(error?.message || "Failed to purchase machine. Please try again.");
-    } finally {
-      setPurchasingMachineId(null);
+      remaining -= canSell;
     }
-  };
+
+    if (remaining > 0) {
+      toast.error("Could not sell the requested number of shares.");
+      return;
+    }
+
+    toast.success(
+      `Sold ${amountToSell} share${amountToSell > 1 ? "s" : ""} successfully`
+    );
+    setSellAmounts((prev) => ({ ...prev, [key]: 0 }));
+    await dispatch(getUserShareDetails(user.id));
+  } catch (err: any) {
+    console.error("SELL SHARE ERROR:", err);
+    toast.error(err?.message || "Failed to sell shares");
+  }
+};
 
 
-  // Use fetched user machines data or fallback to empty array
-  const myMachines = userMachines && Array.isArray(userMachines) ? userMachines : [];
-  const sharedMachines = Array.isArray(specialMachine) ? specialMachine : [];
+  
 
+
+// Use fetched user machines data or fallback to empty array
+const myMachines = Array.isArray(userMachines) ? userMachines : [];
+
+// Raw purchases from API
+const rawShares: UserShare[] = Array.isArray(userShares?.shares)
+  ? userShares.shares
+  : [];
+
+// Aggregated type: one card per machine, but keep all purchases inside
+type AggregatedShare = UserShare & { purchases: UserShare[] };
+
+const grouped = rawShares.reduce<Record<string, AggregatedShare>>((acc, share) => {
+  const key = share.machineName; // or share.machineId if you have it
+
+  const existing = acc[key];
+
+  if (!existing) {
+    acc[key] = { ...share, purchases: [share] };
+  } else {
+    existing.numberOfShares += share.numberOfShares;
+    existing.totalInvestment += share.totalInvestment;
+    existing.expectedMonthlyProfit += share.expectedMonthlyProfit;
+    // if you track this:
+    // existing.totalProfitEarned += share.totalProfitEarned ?? 0;
+
+    existing.purchases.push(share);
+
+    // optional: earliest purchase date
+    if (new Date(share.purchaseDate) < new Date(existing.purchaseDate)) {
+      existing.purchaseDate = share.purchaseDate;
+    }
+    // optional: latest updates
+    if (new Date(share.lastProfitUpdate) > new Date(existing.lastProfitUpdate)) {
+      existing.lastProfitUpdate = share.lastProfitUpdate;
+    }
+    if (new Date(share.nextProfitUpdate) > new Date(existing.nextProfitUpdate)) {
+      existing.nextProfitUpdate = share.nextProfitUpdate;
+    }
+  }
+
+  return acc;
+}, {});
+
+// One item per machine
+const sharedMachines: AggregatedShare[] = Object.values(grouped);
+
+  
   // Get marketplace machines from API
   // Normalize API data shape to always return an array
   console.log("RAW MACHINES FROM API:", allMachines);
+  console.log("SHared MACHINES FROM API:", userShares);
   const rawMachines: any = allMachines;
 
   const marketplaceMachines = Array.isArray(rawMachines)
@@ -231,197 +368,6 @@ export default function Machines() {
     <span>Shared Machines</span>
   </TabsTrigger> */}
         </TabsList>
-
-
-
-        <TabsContent value="shared-machines" className="space-y-4">
-          <Card className="border border-slate-800 bg-[#050810] shadow-[0_18px_45px_rgba(0,0,0,0.7)]">
-            <CardHeader className="border-b border-slate-800 pb-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle className="text-white text-lg sm:text-xl">
-                    Shared Machine
-                  </CardTitle>
-                  <CardDescription className="text-slate-400 text-sm">
-                    Invest in shared mining machines by buying available shares.
-                  </CardDescription>
-                </div>
-
-                {/* Summary chip when machine exists */}
-                {specialMachine && (
-                  <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-                    <span className="rounded-full bg-yellow-500/10 border border-yellow-500/40 px-3 py-1 text-[11px] font-medium text-yellow-200">
-                      Total Shares: {specialMachine.totalShares}
-                    </span>
-                    <span className="rounded-full bg-emerald-500/10 border border-emerald-500/40 px-3 py-1 text-[11px] font-medium text-emerald-200">
-                      Available: {specialMachine.availableShares}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent className="pt-5">
-              {isLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-green-500" />
-                </div>
-              ) : !specialMachine ? (
-                <div className="text-center py-10">
-                  <p className="text-slate-200 text-sm sm:text-base">
-                    No shared machine available.
-                  </p>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-2">
-                    Check back soon to see new shared mining opportunities.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-stretch">
-                  {/* LEFT — IMAGE PANEL */}
-                  <div className="relative h-full">
-                    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 shadow-lg shadow-emerald-500/15 h-56 sm:h-64 lg:h-full">
-                      <img
-                        src={
-                          specialMachine.images?.[0] ||
-                          "https://via.placeholder.com/400x300"
-                        }
-                        alt={specialMachine.machineName}
-                        className="h-full w-full object-cover"
-                      />
-                      {/* Top-left label */}
-                      <div className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-200 border border-slate-700/60">
-                        Shared Mining
-                      </div>
-
-                      {/* Bottom gradient info strip */}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-4 py-3">
-                        <p className="text-sm font-semibold text-white">
-                          {specialMachine.machineName}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-300">
-                          Own a share of this machine and earn passive mining rewards
-                          based on your stake.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT — MACHINE INFO PANEL */}
-                  <div className="relative h-full rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/85 to-emerald-900/40 p-5 shadow-lg shadow-emerald-500/20 flex flex-col justify-between space-y-4">
-                    {/* Glow accent */}
-                    <div className="pointer-events-none absolute -top-12 -right-10 h-32 w-32 rounded-full bg-emerald-500/20 blur-3xl" />
-
-                    {/* Title + main numbers */}
-                    <div className="relative space-y-3">
-                      <p className="text-lg sm:text-xl font-semibold text-white">
-                        {specialMachine.machineName}
-                      </p>
-
-                      <div className="flex flex-wrap gap-3 text-sm">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                            Share Price
-                          </p>
-                          <p className="text-lg font-bold text-emerald-400">
-                            ${specialMachine.sharePrice}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                            Profit Per Share
-                          </p>
-                          <p className="text-sm font-semibold text-emerald-300">
-                            ${specialMachine.profitPerShare}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Stats grid */}
-                      <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm text-slate-200">
-                        <div className="space-y-1">
-                          <p className="text-slate-400 text-[11px] uppercase tracking-[0.15em]">
-                            Total Shares
-                          </p>
-                          <p className="font-medium">
-                            {specialMachine.totalShares?.toLocaleString?.() ??
-                              specialMachine.totalShares}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-slate-400 text-[11px] uppercase tracking-[0.15em]">
-                            Available
-                          </p>
-                          <p className="font-medium text-emerald-300">
-                            {specialMachine.availableShares?.toLocaleString?.() ??
-                              specialMachine.availableShares}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-slate-400 text-[11px] uppercase tracking-[0.15em]">
-                            Sold
-                          </p>
-                          <p className="font-medium text-yellow-300">
-                            {specialMachine.soldShares?.toLocaleString?.() ??
-                              specialMachine.soldShares}
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-slate-400 text-[11px] uppercase tracking-[0.15em]">
-                            Fill Progress
-                          </p>
-                          <p className="font-medium">
-                            {Math.round(
-                              (specialMachine.soldShares /
-                                specialMachine.totalShares) *
-                              100
-                            ) || 0}
-                            %
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="mt-1">
-                        <div className="h-2 w-full rounded-full bg-slate-800">
-                          <div
-                            className="h-2 rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600"
-                            style={{
-                              width: `${Math.min(
-                                100,
-                                (specialMachine.soldShares /
-                                  specialMachine.totalShares) *
-                                100 || 0
-                              )
-                                }%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* CTA */}
-                    <div className="relative pt-1">
-                      <Button
-                        className="mt-2 w-full rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-500 shadow-lg shadow-emerald-500/30"
-                        onClick={() => handleBuyShares(1)} // logic unchanged
-                      >
-                        Buy Share
-                      </Button>
-                      <p className="mt-2 text-[11px] text-slate-400 text-center">
-                        You can increase your position later by purchasing more shares,
-                        subject to availability.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-
-
-
         <TabsContent value="my-machines" className="space-y-4">
           <Card className="border border-slate-800 bg-[#050810] shadow-[0_18px_45px_rgba(0,0,0,0.7)]">
             <CardHeader className="border-b border-slate-800 pb-4">
@@ -457,231 +403,338 @@ export default function Machines() {
                 </div>
               ) : activeMachines.length === 0 && sharedMachines.length === 0 ? (
                 <div className="text-center py-10">
-                  <p className="text-slate-200 text-sm sm:text-base">
-                    You do not have any machines yet.
-                  </p>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-2">
-                    Purchase machines or invest in shared machines to get started.
-                  </p>
-                </div>
+  <p className="text-slate-200 text-sm sm:text-base">
+    You do not have any machines yet.
+  </p>
+  <p className="text-xs sm:text-sm text-slate-500 mt-2">
+    Purchase machines or invest in shared machines to get started.
+  </p>
+
+  <Link href="/shop">
+    <button
+      className="mt-4 inline-flex items-center px-4 py-2 rounded-lg 
+                 bg-emerald-500 text-gray-900 text-sm font-semibold
+                 hover:bg-emerald-400 hover:scale-105 transition-transform"
+    >
+      Go to Shop
+    </button>
+  </Link>
+</div>
               ) : (
                 <>
-                  {/* ACTIVE MINING MACHINES */}
-                  {activeMachines.length > 0 && (
-                    <section className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
-                          Active Mining Machines
-                        </h3>
-                        <div className="h-px flex-1 ml-4 bg-gradient-to-r from-emerald-500/60 via-emerald-500/10 to-transparent" />
-                      </div>
+{/* ACTIVE MINING MACHINES */}
+{activeMachines.length > 0 && (
+  <section className="space-y-3">
+    <div className="flex items-center justify-between">
+      <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+        Active Mining Machines
+      </h3>
+      <div className="h-px flex-1 ml-4 bg-gradient-to-r from-emerald-500/60 via-emerald-500/10 to-transparent" />
+    </div>
 
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {activeMachines.map((machine: any, i: number) => (
-                          <div
-                            key={`mining-${i}`}
-                            className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-slate-900 via-slate-900/80 to-emerald-900/40 px-4 py-4 sm:px-5 sm:py-5 shadow-lg shadow-emerald-500/15"
-                          >
-                            {/* Glow overlay */}
-                            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.35),transparent_55%)]" />
+    {/* 2 machines per row */}
+    <div className="grid gap-3 grid-cols-2">
+      {activeMachines.map((machine: any, i: number) => {
+        // Compute next profit date (prefer backend field, fallback to 30 days from last/assigned)
+        let nextProfitDate: Date | null = null;
+        if (machine.nextProfitUpdate) {
+          nextProfitDate = new Date(machine.nextProfitUpdate);
+        } else if (machine.lastProfitUpdate) {
+          nextProfitDate = new Date(
+            new Date(machine.lastProfitUpdate).getTime() +
+              30 * 24 * 60 * 60 * 1000
+          );
+        } else if (machine.assignedDate) {
+          nextProfitDate = new Date(
+            new Date(machine.assignedDate).getTime() +
+              30 * 24 * 60 * 60 * 1000
+          );
+        }
 
-                            <div className="relative flex h-full flex-col justify-between gap-4">
-                              {/* Top row */}
-                              <div className="flex items-start gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-400/60 shadow-sm shadow-emerald-500/40">
-                                  <Cpu className="h-6 w-6 text-emerald-300" />
-                                </div>
+        let nextProfitLabel = "N/A";
+        if (nextProfitDate && !isNaN(nextProfitDate.getTime())) {
+          const now = new Date();
+          const diffMs = nextProfitDate.getTime() - now.getTime();
+          if (diffMs <= 0) {
+            nextProfitLabel = "Due now";
+          } else {
+            const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            nextProfitLabel = `${days} day${days > 1 ? "s" : ""}`;
+          }
+        }
 
-                                <div className="space-y-1">
-                                  <p className="text-sm sm:text-base font-semibold text-white">
-                                    {machine?.machineName || "Mining Machine"}
-                                  </p>
-                                  <p className="text-xs text-slate-400">
-                                    Purchased:{" "}
-                                    {new Date(machine.assignedDate).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
+        // Monthly profit: prefer machine.monthlyProfit, fallback to expectedMonthlyProfit, else 0
+        const monthlyProfit = Number(
+          machine.monthlyProfit ?? machine.expectedMonthlyProfit ?? 0
+        ).toFixed(2);
 
-                              {/* Bottom row */}
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="flex flex-wrap gap-2 text-xs">
-                                  <span className="inline-flex items-center rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-slate-200 border border-slate-700/60">
-                                    <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                                    Active Machine
-                                  </span>
+        return (
+          <div
+            key={`mining-${i}`}
+            className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-slate-900 via-slate-900/80 to-emerald-900/40 px-4 py-4 sm:px-5 sm:py-5 shadow-lg shadow-emerald-500/15"
+          >
+            {/* Glow overlay */}
+            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.35),transparent_55%)]" />
 
-                                  {/* Price pill */}
-                                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/40">
-                                    Price: ${machine.priceRange}
-                                  </span>
+            <div className="relative flex h-full flex-col justify-between gap-4">
+              {/* Top row */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-400/60 shadow-sm shadow-emerald-500/40">
+                  <Cpu className="h-6 w-6 text-emerald-300" />
+                </div>
 
-                                  {/* NEW: Profit accumulated pill */}
-                                  <span className="inline-flex items-center rounded-full bg-emerald-500/5 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/30">
-                                    Profit: $
-                                    {Number(machine.monthlyProfitAccumulated || 0).toFixed(2)}
-                                  </span>
-                                </div>
+                <div className="space-y-1">
+                  <p className="text-sm sm:text-base font-semibold text-white">
+                    {machine?.machineName || "Mining Machine"}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Purchased:{" "}
+                    {new Date(machine.assignedDate).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
 
-                                <div className="text-right space-y-1">
-                                  <Button
-                                    style={{ backgroundColor: "#0b0e13" }}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={async () => {
-                                      try {
-                                        const salePrice =
-                                          parseFloat(
-                                            machine.priceRange.toString().replace("$", "")
-                                          ) * 0.9;
+              {/* Bottom row */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="inline-flex items-center rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-slate-200 border border-slate-700/60">
+                    <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    Active Machine
+                  </span>
 
-                                        const result = await dispatch(
-                                          sellUserMachine(machine._id)
-                                        ).unwrap();
+                  {/* Price pill */}
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/40">
+                    Price: ${machine.priceRange}
+                  </span>
 
-                                        toast.success(
-                                          result?.message ||
-                                          `Machine sold for $${salePrice.toFixed(
-                                            2
-                                          )} (10% fee deducted)`
-                                        );
-                                      } catch (err: any) {
-                                        toast.error(
-                                          err?.message || "Failed to sell machine"
-                                        );
-                                        console.error("SELL ERROR:", err);
-                                      }
-                                    }}
-                                    className="border-slate-600 bg-black/60 text-slate-100 hover:bg-slate-900/80"
-                                  >
-                                    Sell (10% fee)
-                                  </Button>
-                                  <p className="text-[11px] text-slate-400">
-                                    Status:{" "}
-                                    <span className="text-emerald-300">
-                                      {machine.status}
-                                    </span>
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
+                  {/* Monthly profit pill */}
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/40">
+                    Monthly Profit: ${monthlyProfit}
+                  </span>
+
+                  {/* Profit accumulated pill */}
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/5 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/30">
+                    Profit: $
+                    {Number(machine.monthlyProfitAccumulated || 0).toFixed(2)}
+                  </span>
+
+                  {/* Next profit countdown pill */}
+                  <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2.5 py-1 text-[11px] text-yellow-200 border border-yellow-500/40">
+                    Next Profit In: {nextProfitLabel}
+                  </span>
+                </div>
+
+                <div className="text-right space-y-1">
+                  <Button
+                    style={{ backgroundColor: "#0b0e13" }}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const salePrice =
+                        parseFloat(
+                          machine.priceRange.toString().replace("$", "")
+                        ) * 0.9;
+
+                      showConfirmToast(
+                        `Are you sure you want to sell "${machine.machineName}" for $${salePrice.toFixed(
+                          2
+                        )}? A 10% fee will be deducted and this cannot be undone.`,
+                        () => handleSellMachine(machine)
+                      );
+                    }}
+                    className="border-slate-600 bg-black/60 text-slate-100 hover:bg-slate-900/80"
+                  >
+                    Sell (10% fee)
+                  </Button>
+                  <p className="text-[11px] text-slate-400">
+                    Status:{" "}
+                    <span className="text-emerald-300">
+                      {machine.status}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
 
                   {/* SHARED MACHINES */}
                   {sharedMachines.length > 0 && (
-                    <section className="space-y-3 pt-2 border-t border-slate-800/70">
-                      <div className="flex items-center justify-between pt-2">
-                        <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
-                          Shared Machines
-                        </h3>
-                        <div className="h-px flex-1 ml-4 bg-gradient-to-r from-yellow-500/60 via-yellow-500/10 to-transparent" />
-                      </div>
+  <section className="space-y-3 pt-2 border-t border-slate-800/70">
+    <div className="flex items-center justify-between pt-2">
+      <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+        Shared Machines
+      </h3>
+      <div className="h-px flex-1 ml-4 bg-gradient-to-r from-yellow-500/60 via-yellow-500/10 to-transparent" />
+    </div>
 
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {sharedMachines.map((share: any, i: number) => (
-                          <div
-                            key={`share-${i}`}
-                            className="group relative overflow-hidden rounded-2xl border border-yellow-500/25 bg-gradient-to-br from-slate-900 via-slate-900/80 to-amber-900/40 px-4 py-4 sm:px-5 sm:py-5 shadow-lg shadow-yellow-500/15"
-                          >
-                            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.35),transparent_55%)]" />
+   <div className="grid gap-3 md:grid-cols-2">
+  {sharedMachines.map((share, i) => {
+    const key = getShareKey(share);
+    const currentValue = sellAmounts[key] ?? "";
 
-                            <div className="relative flex h-full flex-col justify-between gap-4">
-                              <div className="flex items-start gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400/15 border border-yellow-300/60 shadow-sm shadow-yellow-500/40">
-                                  <Cpu className="h-6 w-6 text-yellow-200" />
-                                </div>
+    // Monthly profit = profit per share * number of shares
+    const monthlyProfit =
+      (share.profitPerShare ?? 0) * (share.numberOfShares ?? 0);
 
-                                <div className="space-y-1">
-                                  <p className="text-sm sm:text-base font-semibold text-white">
-                                    {share.machineName || "Shared Machine"}
-                                  </p>
-                                  <p className="text-xs text-slate-400">
-                                    Purchased:{" "}
-                                    {new Date(
-                                      share.purchaseDate
-                                    ).toLocaleDateString()}
-                                  </p>
-                                  <p className="text-xs text-slate-400">
-                                    Shares Owned:{" "}
-                                    <span className="font-semibold text-slate-100">
-                                      {share.numberOfShares}
-                                    </span>
-                                  </p>
-                                </div>
-                              </div>
+    // Compute next profit date (prefer backend field, fallback to 30 days from last/purchase)
+    let nextProfitDate: Date | null = null;
+    if (share.nextProfitUpdate) {
+      nextProfitDate = new Date(share.nextProfitUpdate);
+    } else if (share.lastProfitUpdate) {
+      nextProfitDate = new Date(
+        new Date(share.lastProfitUpdate).getTime() +
+          30 * 24 * 60 * 60 * 1000
+      );
+    } else if (share.purchaseDate) {
+      nextProfitDate = new Date(
+        new Date(share.purchaseDate).getTime() +
+          30 * 24 * 60 * 60 * 1000
+      );
+    }
 
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="flex flex-wrap gap-2 text-xs">
-                                  <span className="inline-flex items-center rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-slate-200 border border-slate-700/60">
-                                    <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-yellow-300" />
-                                    Shared Position
-                                  </span>
-                                  <span className="inline-flex items-center rounded-full bg-emerald-500/5 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/30">
-                                    Earned: ${Number(share.totalProfitEarned || 0).toFixed(2)}
-                                  </span>
-                                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/40">
-                                    Value: $
-                                    {(
-                                      share.numberOfShares * share.pricePerShare
-                                    ).toFixed(2)}
-                                  </span>
-                                </div>
+    let nextProfitLabel = "N/A";
+    if (nextProfitDate && !isNaN(nextProfitDate.getTime())) {
+      const now = new Date();
+      const diffMs = nextProfitDate.getTime() - now.getTime();
+      if (diffMs <= 0) {
+        nextProfitLabel = "Due now";
+      } else {
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        nextProfitLabel = `${days} day${days > 1 ? "s" : ""}`;
+      }
+    }
 
-                                <div className="text-right space-y-1">
-                                  <Button
-                                    style={{ backgroundColor: "#0b0e13" }}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={async () => {
-                                      try {
-                                        const result = await dispatch(
-                                          sellSharePurchase({
-                                            sharePurchaseId: share.id,
-                                            payload: {
-                                              numberOfSharesToSell:
-                                                share.numberOfShares,
-                                            },
-                                          })
-                                        ).unwrap();
+    const totalValue = (share.numberOfShares * share.pricePerShare).toFixed(2);
+    const totalEarned = Number(share.totalProfitEarned || 0).toFixed(2);
+    const monthlyProfitStr = monthlyProfit.toFixed(2);
 
-                                        toast.success(
-                                          result?.message ||
-                                          "Shared machine sold successfully!"
-                                        );
-                                      } catch (err: any) {
-                                        toast.error(
-                                          err?.message ||
-                                          "Failed to sell shared machine"
-                                        );
-                                        console.error(
-                                          "SELL SHARE ERROR:",
-                                          err
-                                        );
-                                      }
-                                    }}
-                                    className="border-slate-600 bg-black/60 text-slate-100 hover:bg-slate-900/80"
-                                  >
-                                    Sell Shares
-                                  </Button>
-                                  <p className="text-[11px] text-slate-400">
-                                    Type:{" "}
-                                    <span className="text-yellow-200">
-                                      Shared Machine
-                                    </span>
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-                </>
+    return (
+      <div
+        key={key || `share-${i}`}
+        className="group relative overflow-hidden rounded-2xl border border-yellow-500/25 bg-gradient-to-br from-slate-900 via-slate-900/80 to-amber-900/40 px-4 py-4 sm:px-5 sm:py-5 shadow-lg shadow-yellow-500/15"
+      >
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-300 bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.35),transparent_55%)]" />
+
+        <div className="relative flex h-full flex-col justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400/15 border border-yellow-300/60 shadow-sm shadow-yellow-500/40">
+              <Cpu className="h-6 w-6 text-yellow-200" />
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm sm:text-base font-semibold text-white">
+                {share.machineName || "Shared Machine"}
+              </p>
+              <p className="text-xs text-slate-400">
+                Purchased:{" "}
+                {new Date(share.purchaseDate).toLocaleDateString()}
+              </p>
+              <p className="text-xs text-slate-400">
+                Shares Owned:{" "}
+                <span className="font-semibold text-slate-100">
+                  {share.numberOfShares}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="inline-flex items-center rounded-full bg-black/40 px-2.5 py-1 text-[11px] text-slate-200 border border-slate-700/60">
+                <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-yellow-300" />
+                Shared Position
+              </span>
+
+              {/* Total earned */}
+              <span className="inline-flex items-center rounded-full bg-emerald-500/5 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/30">
+                Earned: ${totalEarned}
+              </span>
+
+              {/* Monthly profit */}
+              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/40">
+                Monthly Profit: ${monthlyProfitStr}
+              </span>
+
+              {/* Next profit countdown */}
+              <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2.5 py-1 text-[11px] text-yellow-200 border border-yellow-500/40">
+                Next Profit In: {nextProfitLabel}
+              </span>
+
+              {/* Total value */}
+              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] text-emerald-200 border border-emerald-500/40">
+                Value: ${totalValue}
+              </span>
+            </div>
+
+            <div className="text-right space-y-1">
+              <div className="flex items-center justify-end gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={share.numberOfShares}
+                  value={currentValue}
+                  onChange={(e) => {
+                    const raw = Number(e.target.value);
+                    if (Number.isNaN(raw)) {
+                      setSellAmounts((prev) => ({ ...prev, [key]: 0 }));
+                      return;
+                    }
+                    const clamped = Math.max(
+                      0,
+                      Math.min(raw, share.numberOfShares)
+                    );
+                    setSellAmounts((prev) => ({ ...prev, [key]: clamped }));
+                  }}
+                  className="w-20 rounded-md border border-slate-600 bg-black/60 px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-yellow-400"
+                  placeholder="Qty"
+                />
+                <span className="text-[11px] text-slate-400">
+                  / {share.numberOfShares}
+                </span>
+              </div>
+
+              <Button
+                style={{ backgroundColor: "#0b0e13" }}
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const key = getShareKey(share);
+                  const amountToSell = sellAmounts[key] ?? 0;
+
+                  if (!amountToSell || amountToSell <= 0) {
+                    toast.error("Enter how many shares you want to sell");
+                    return;
+                  }
+
+                  showConfirmToast(
+                    `Sell ${amountToSell} share${
+                      amountToSell > 1 ? "s" : ""
+                    } of "${share.machineName}"? This will reduce your position and cannot be undone.`,
+                    () => handleSellShares(share)
+                  );
+                }}
+                className="border-slate-600 bg-black/60 text-slate-100 hover:bg-slate-900/80"
+              >
+                Sell Shares
+              </Button>
+              <p className="text-[11px] text-slate-400">
+                Type:{" "}
+                <span className="text-yellow-200">Shared Machine</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
+  </section>
+)}              </>
               )}
             </CardContent>
           </Card>

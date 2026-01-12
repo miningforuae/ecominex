@@ -78,7 +78,7 @@ console.log(withdrawals)
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   type NetworkType = "TRC20" | "ERC20";
-
+   
   const [depositNetwork, setDepositNetwork] = useState<NetworkType | "">("");
 
   const depositAddresses = {
@@ -263,10 +263,7 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
               </div>
             </DialogContent>
           </Dialog>
-
-
-
-          {/* Withdraw */}
+           {/* Withdraw */}
           <Dialog open={isWithdrawOpen} onOpenChange={setIsWithdrawOpen}>
             <DialogTrigger asChild>
               <Button className="bg-red-600 text-white" style={{ backgroundColor: "red" }}>
@@ -274,7 +271,7 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
                 Withdraw
               </Button>
             </DialogTrigger>
-
+ 
             <DialogContent className="border-slate-700" style={{ backgroundColor: "#000000" }}>
               <DialogHeader>
                 <DialogTitle className="text-white text-2xl font-semibold">
@@ -284,8 +281,8 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
                   Minimum withdrawal: $50.00
                 </DialogDescription>
               </DialogHeader>
-
-              <div className="space-y-6">
+ 
+              <div className="space-y-6"> 
                 {/* Amount */}
                 <Label className="text-slate-300">Amount</Label>
                 <Input

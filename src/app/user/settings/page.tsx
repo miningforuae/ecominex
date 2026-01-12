@@ -9,14 +9,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/lib/store/store";
-import { useUpdateProfileMutation, useChangePasswordMutation } from "@/lib/feature/auth/authThunk";
+import { useUpdateProfileMutation, useChangePasswordMutation,useToggle2faMutation } from "@/lib/feature/auth/authThunk";
 import { toast, ToastContainer } from "react-toastify";
+import { setCredentials } from "@/lib/feature/auth/authSlice";
 import "react-toastify/dist/ReactToastify.css";
+import { userAgent } from "next/server";
 
 export default function Settings() {
   const [changePassword, { isLoading: isChanging }] = useChangePasswordMutation();
-
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+const dispatch = useDispatch<AppDispatch>();
+  const { user, isAuthenticated,token} = useSelector((state: RootState) => state.auth);
+console.log("user details",user)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -24,7 +27,8 @@ export default function Settings() {
     country: "",
   });
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
-
+const [toggle2fa, { isLoading: isToggling2fa }] = useToggle2faMutation();
+const is2FAEnabled = !!user?.twoFactorEnabled;
   useEffect(() => {
     if (user) {
       setFormData({
@@ -35,6 +39,41 @@ export default function Settings() {
       });
     }
   }, [user]);
+
+const handleTwoFactorToggle = async (checked: boolean) => {
+  if (!user) {
+    toast.error("You must be logged in to change this setting.");
+    return;
+  }
+
+
+
+  const userId = user._id || user.id; // whichever your backend expects
+
+  try {
+    const res = await toggle2fa({
+      userId,
+      enabled: checked,
+    }).unwrap();
+
+    // Locally update Redux auth state: keep same token, patch user
+    dispatch(
+      setCredentials({
+        user: { ...user, twoFactorEnabled: checked },
+        token: token as string,
+      })
+    );
+
+    toast.success(
+      res.message ||
+        `Two-factor authentication ${checked ? "enabled" : "disabled"}.`
+    );
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err?.data?.message || "Failed to update 2FA settings");
+  }
+};
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,6 +88,8 @@ export default function Settings() {
       toast.error(error?.data?.message || "Error updating profile");
     }
   };
+
+
 
   const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,6 +120,7 @@ export default function Settings() {
     }
   };
 
+  
 
   return (
     <div className="space-y-6 p-6 min-h-screen"style={{backgroundColor:"#000000"}}>
@@ -103,12 +145,12 @@ export default function Settings() {
           >
             Security
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
             value="notifications"
             className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400"
           >
             Notifications
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4">
@@ -122,7 +164,7 @@ export default function Settings() {
 
             <CardContent className="space-y-6">
               {/* Avatar */}
-              <div className="flex items-center gap-4">
+              {/* <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
                   <AvatarFallback className="text-white text-2xl"style={{backgroundColor:"#22c55e"}}>
                     {user?.firstName?.charAt(0) || "U"}
@@ -132,7 +174,7 @@ export default function Settings() {
                 <Button variant="outline" className="border-slate-700 text-white"style={{backgroundColor:"#1b1b1b"}}>
                   Change Avatar
                 </Button>
-              </div>
+              </div> */}
 
               {/* First + Last Name */}
               <div className="grid gap-4 md:grid-cols-2">
@@ -279,31 +321,52 @@ export default function Settings() {
             </form>
           </Card>
 
-          <Card className="border-slate-800"style={{backgroundColor:"#1b1b1b"}}>
-            <CardHeader>
-              <CardTitle className="text-white">Two-Factor Authentication</CardTitle>
-              <CardDescription className="text-slate-400">Add an extra layer of security</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-slate-300">Enable 2FA</Label>
-                  <p className="text-sm text-slate-500">
-                    Secure your account with two-factor authentication
-                  </p>
-                </div>
-                <Switch
-                  className="
-    data-[state=checked]:bg-emerald-500 
-    data-[state=unchecked]:bg-gray-300
-    [&>span]:bg-white 
-    data-[state=checked]:[&>span]:bg-emerald-100
-    transition-colors
-  "
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <Card className="border-slate-800" style={{ backgroundColor: "#1b1b1b" }}>
+  <CardHeader>
+    <CardTitle className="text-white">Two-Factor Authentication</CardTitle>
+    <CardDescription className="text-slate-400">
+      Add an extra layer of security
+    </CardDescription>
+  </CardHeader>
+ <CardContent className="space-y-4">
+  <div className="flex items-center justify-between">
+    <div className="space-y-0.5">
+      <div className="flex items-center gap-2">
+        <Label className="text-slate-300">Enable 2FA</Label>
+
+        {/* Status pill */}
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border
+            ${
+              is2FAEnabled
+                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/50"
+                : "bg-slate-800/80 text-slate-300 border-slate-600"
+            }`}
+        >
+          {is2FAEnabled ? "Enabled" : "Disabled"}
+        </span>
+      </div>
+
+      <p className="text-sm text-slate-500">
+        Secure your account with two-factor authentication
+      </p>
+    </div>
+
+    <Switch
+      checked={is2FAEnabled}
+      disabled={isToggling2fa}
+      onCheckedChange={handleTwoFactorToggle}
+      className="
+        data-[state=checked]:bg-emerald-500 
+        data-[state=unchecked]:bg-gray-300
+        [&>span]:bg-white 
+        data-[state=checked]:[&>span]:bg-emerald-100
+        transition-colors
+      "
+    />
+  </div>
+</CardContent>
+</Card>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">

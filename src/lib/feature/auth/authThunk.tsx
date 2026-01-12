@@ -9,8 +9,13 @@ import {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
+  LoginResponseBase,
   ResendOtp,
-  ResendOtpResponse
+  ResendOtpResponse,
+  Toggle2FARequest,
+  Toggle2FAResponse,
+  ResendLoginOtpRequest,
+  ResendLoginOtpResponse,
 } from '../../../types/user';
 
 
@@ -18,7 +23,13 @@ import {
 export const authApiSlice = baseApiSlice.injectEndpoints({
   endpoints: (builder) => ({
 
-
+resendLoginOtp: builder.mutation<ResendLoginOtpResponse, ResendLoginOtpRequest>({
+  query: (body) => ({
+    url: "api/v1/resend-login-otp",
+    method: "POST",
+    body,
+  }),
+}),
 
     register: builder.mutation<AuthResponse, RegisterCredentials>({
       query: (credentials) => ({
@@ -30,6 +41,17 @@ export const authApiSlice = baseApiSlice.injectEndpoints({
       invalidatesTags: ['User'],
     }),
 
+    // authThunk.ts
+verifyLoginOtp: builder.mutation<
+  { success: boolean; user: any; token: string },
+  { userId: string; otp: string }
+>({
+  query: (body) => ({
+    url: "api/v1/verify-login-otp",
+    method: "POST",
+    body,
+  }),
+}),
 
 resendOtp: builder.mutation<ResendOtpResponse, ResendOtp>({
   query: (body) => ({
@@ -49,15 +71,15 @@ resendOtp: builder.mutation<ResendOtpResponse, ResendOtp>({
       invalidatesTags: ['User'],
     }),
 
-    login: builder.mutation<AuthResponse, LoginCredentials>({
-      query: (credentials) => ({
-        url: 'api/v1/login',
-        method: 'POST',
-        body: credentials,
-        credentials: 'include',
-      }),
-      invalidatesTags: ['User'],
-    }),
+login: builder.mutation<LoginResponseBase, LoginCredentials>({
+  query: (credentials) => ({
+    url: 'api/v1/login',
+    method: 'POST',
+    body: credentials,
+    credentials: 'include',
+  }),
+  invalidatesTags: ['User'],
+}),
 
     logout: builder.mutation<{ message: string }, void>({
       query: () => ({
@@ -143,12 +165,22 @@ resendOtp: builder.mutation<ResendOtpResponse, ResendOtp>({
       { token: string; Password: string }
     >({
       query: (data) => ({
-        url: `/reset-password/${data.token}`,
+        url: `api/v1/reset-password/${data.token}`,
         method: "POST",
         body: { password: data.Password },
       }),
-    })
+    }),
 
+ toggle2fa: builder.mutation<Toggle2FAResponse, Toggle2FARequest>({
+  query: (body) => ({
+    url: "api/v1/settings/2fa", // your backend route
+    method: "PATCH",
+    body,                       // { userId, enabled }
+    credentials: "include",
+  }),
+  invalidatesTags: ["User"],
+}),
+    
 
   }),
 });
@@ -166,4 +198,7 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useResendOtpMutation,
+  useVerifyLoginOtpMutation,
+  useToggle2faMutation,
+  useResendLoginOtpMutation,
 } = authApiSlice;

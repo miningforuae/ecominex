@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '@/utils/axiosInstance';
 import { RootState } from '@/lib/store/store';
 
-interface ShareMachine {
+export interface ShareMachine {
   _id: string;
   machineName: string;
   sharePrice: number;
@@ -22,7 +22,7 @@ interface ShareMachine {
 
 }
 
-interface UserShare {
+export interface UserShare {
   id: string;
   machineName: string;
   numberOfShares: number;
@@ -33,6 +33,7 @@ interface UserShare {
   purchaseDate: string;
   lastProfitUpdate: string;
   nextProfitUpdate: string;
+  totalProfitEarned?: number;
 }
 
 interface SharePurchasePayload {
@@ -44,15 +45,14 @@ interface ShareSalePayload {
   numberOfSharesToSell: number;
 }
 
-interface ShareSummary {
+export interface ShareSummary {
   shares: UserShare[];
   summary: {
     totalShares: number;
     totalInvestment: number;
     expectedMonthlyProfit: number;
-    totalProfitEarned: number; 
-
-  }
+    totalProfitEarned: number;
+  };
 }
 
 interface PurchaseResponse {
