@@ -45,22 +45,32 @@ export default function PendingRequest({
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const filteredData = useMemo(() => {
-    const base = pendingWithdrawals.filter(
-      (item) =>
-        `${item.user.firstName} ${item.user.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
-        item.user.email.toLowerCase().includes(search.toLowerCase())
+const filteredData = useMemo(() => {
+  const searchLower = search.toLowerCase();
+
+  const base = pendingWithdrawals.filter((item) => {
+    // If user is missing, skip this item
+    if (!item.user) return false;
+
+    const fullName = `${item.user.firstName ?? ""} ${item.user.lastName ?? ""}`
+      .toLowerCase();
+    const email = (item.user.email ?? "").toLowerCase();
+
+    return (
+      fullName.includes(searchLower) ||
+      email.includes(searchLower)
     );
+  });
 
-    return base.slice().sort((a, b) => {
-      if (amountFilter === "min") return a.amount - b.amount;
-      if (amountFilter === "max") return b.amount - a.amount;
+  return base.slice().sort((a, b) => {
+    if (amountFilter === "min") return a.amount - b.amount;
+    if (amountFilter === "max") return b.amount - a.amount;
 
-      const dateA = new Date(a.transactionDate).getTime();
-      const dateB = new Date(b.transactionDate).getTime();
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-    });
-  }, [pendingWithdrawals, search, sortOrder, amountFilter]);
+    const dateA = new Date(a.transactionDate).getTime();
+    const dateB = new Date(b.transactionDate).getTime();
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
+}, [pendingWithdrawals, search, sortOrder, amountFilter]);
 
   const handleProcessRequest = (item: Withdrawal) => {
     Swal.fire({
