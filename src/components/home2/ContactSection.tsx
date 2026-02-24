@@ -59,7 +59,7 @@ const HomeContactSection = () => {
                                     <Mail className="w-10 h-10 sm:h-12 sm:w-12 flex-shrink-0 text-white bg-[#1c8337] px-2 py-2.5 rounded-full"  />
                                     <div className="text-center sm:text-start mt-2">
                                         <h3 className="text-[20px] font-semibold text-white">Email</h3>
-                                        <p className="text-gray-400 text-[15px]">info@ecominex.com</p>
+                                        <p className="text-gray-400 text-[15px]">info@ecominex.net</p>
                                     </div>
                                 </div>
                                 <div className="flex flex-col sm:flex-row items-center sm:items-start space-x-4">

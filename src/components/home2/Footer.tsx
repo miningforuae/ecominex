@@ -192,7 +192,7 @@ return (
           </div>
 
           <p className="mt-4 font-semibold text-[14px] sm:text-[15px]">
-            info@ecominex.com
+            info@ecominex.net
           </p>
         </div>
       </div>

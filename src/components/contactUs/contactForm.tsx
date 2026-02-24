@@ -229,7 +229,7 @@ const ContactForm = () => {
                     Email
                   </h3>
                   <p className="text-gray-400 text-[13px] sm:text-[15px]">
-                    info@ecominex.com
+                    info@ecominex.net
                   </p>
                 </div>
               </div>
