@@ -29,9 +29,13 @@ import PurchaseConfirmationModal from "@/components/shop/confirmModal";
 import { purchaseSpecialShares, getSpecialShareMachine } from "@/lib/feature/shareMachine/shareMachineSlice";
 import { getUserBalance } from "@/lib/feature/userMachine/balanceSlice";
 import { useRouter } from "next/navigation";
+import Head from "next/head";
+import { productSeo } from "@/lib/seoMap";
 
 // Main Product Details component that decides which sub-component to render
 const ProductDetails = ({ params }) => {
+  const slug = params.id;                 
+  const seo = productSeo[slug];  
   const [isShareRoute, setIsShareRoute] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { specialMachine, loading: shareLoading } = useSelector(
@@ -62,6 +66,16 @@ const ProductDetails = ({ params }) => {
   if (isLoading) {
     return (
       <LandingLayout>
+         <Head>
+          <title>{seo?.title || "Loading product | Ecominex"}</title>
+          <meta
+            name="description"
+            content={
+              seo?.description ||
+              "Loading crypto mining hardware details on Ecominex."
+            }
+          />
+        </Head>
         <div className="flex min-h-screen items-center justify-center bg-primary">
           <div className="text-xl text-white">
             Loading machine details...
@@ -80,6 +94,16 @@ const ProductDetails = ({ params }) => {
   if (!product) {
     return (
       <LandingLayout>
+         <Head>
+          <title>{seo?.title || "Loading product | Ecominex"}</title>
+          <meta
+            name="description"
+            content={
+              seo?.description ||
+              "Loading crypto mining hardware details on Ecominex."
+            }
+          />
+        </Head>
         <div className="flex min-h-screen items-center justify-center bg-primary">
           <div className="text-xl text-white">
             Machine not found. Please try again later.
@@ -201,6 +225,16 @@ const ProductDetails = ({ params }) => {
 
   return (
     <LandingLayout>
+       <Head>
+          <title>{seo?.title || "Loading product | Ecominex"}</title>
+          <meta
+            name="description"
+            content={
+              seo?.description ||
+              "Loading crypto mining hardware details on Ecominex."
+            }
+          />
+        </Head>
       <div className="min-h-screen bg-gradient-to-b from-primary to-primary/95 text-white">
         <div className="container mx-auto px-4 py-8">
           {/* Back Navigation */}
