@@ -1,6 +1,7 @@
 import "@/css/style.css";
 import React from "react";
 import { Poppins } from 'next/font/google';
+import Script from "next/script"; // ✅ Import Script
 
 import StoreProvider from "@/lib/feature/provider/StoreProvider";
 
@@ -19,7 +20,21 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={poppins.className}>
-
+<head>
+        {/* ✅ Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-RCZ5L3GRGP"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-RCZ5L3GRGP');
+          `}
+        </Script>
+      </head>
       <body suppressHydrationWarning={true}  >
         <div className="dark:bg-boxdark-2 dark:text-bodydark">
           <StoreProvider>
