@@ -1,4 +1,4 @@
-// app/shop/[id]/ProductDetails.tsx
+
 // @ts-nocheck
 "use client";
 
@@ -30,9 +30,7 @@ import {
 } from "@/lib/feature/shareMachine/shareMachineSlice";
 import { getUserBalance } from "@/lib/feature/userMachine/balanceSlice";
 import "react-toastify/dist/ReactToastify.css";
-// ❌ REMOVED: import Head from "next/head";
-// ❌ REMOVED: import { productSeo } from "@/lib/seoMap";
-// Metadata is now handled by generateMetadata in page.tsx
+
 
 const ProductDetails = ({ params }) => {
   const [quantity, setQuantity] = useState(1);
@@ -237,7 +235,7 @@ const ProductDetails = ({ params }) => {
 
   return (
     <LandingLayout>
-      {/* ✅ No <Head> needed — metadata handled by generateMetadata */}
+      
       <ToastContainer
         position="top-right"
         autoClose={5000}
