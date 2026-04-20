@@ -68,7 +68,7 @@ const LocationSection = () => {
                   <Phone className="h-10 w-10 flex-shrink-0 text-[#20e202]" />
                   <div>
                     <h3 className="text-xl font-semibold text-white">Phone</h3>
-                    <p className="text-gray-400">+18079074455</p>
+                    <p className="text-gray-400">+971563605068</p>
                   </div>
                 </div>
               </div>

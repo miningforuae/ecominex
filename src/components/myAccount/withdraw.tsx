@@ -133,7 +133,7 @@ const WithdrawalDashboard = () => {
         Deposit Button
         <Button
           size="lg"
-          onClick={() => window.open('https://wa.me/+18079074455', '_blank')}
+          onClick={() => window.open('https://wa.me/+971563605068', '_blank')}
           className="bg-gradient-to-br p-4 sm:p-8 from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-medium shadow-lg shadow-blue-500/20 transition-all duration-300 ease-out hover:shadow-blue-500/30 hover:scale-[1.02]"
         >
           <Plus className="mr-2 h-6 w-6 sm:h-10 sm:w-10 text-2xl sm:text-4xl" />

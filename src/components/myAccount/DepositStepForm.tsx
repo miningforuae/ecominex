@@ -191,7 +191,7 @@ const DepositStepForm = ({style }) => {
             </div>
 
             <Button
-              onClick={() => window.open('https://wa.me/+18079074455', '_blank')}
+              onClick={() => window.open('https://wa.me/+971563605068', '_blank')}
               className="mt-1 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 hover:from-emerald-600 hover:via-emerald-700 hover:to-emerald-800 text-white font-medium h-10 sm:h-12 text-base sm:text-[14px] shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all duration-300"
             >
               Share the screenshot on WhatsApp now

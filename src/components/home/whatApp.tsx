@@ -8,7 +8,7 @@ interface FloatingWhatsAppProps {
 }
 
 const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
-  phoneNumber = "+18079074455",
+  phoneNumber = "+971563605068",
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -24,7 +24,7 @@ const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   }, []);
 
   // Make sure we always work with a string
-  const rawPhone = phoneNumber || "+18079074455";
+  const rawPhone = phoneNumber || "+971563605068";
   const formattedPhone = String(rawPhone).replace(/\D/g, "");
 
   console.log("phoneNumber prop:", phoneNumber, "→ formatted:", formattedPhone);

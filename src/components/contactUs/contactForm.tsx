@@ -242,7 +242,7 @@ const ContactForm = () => {
                     Phone
                   </h3>
                   <p className="text-gray-400 text-[13px] sm:text-[15px]">
-                    +18079074455
+                    +971563605068
                   </p>
                 </div>
               </div>
