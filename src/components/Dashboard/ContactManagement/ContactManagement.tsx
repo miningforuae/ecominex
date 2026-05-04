@@ -399,54 +399,64 @@ export default function UsersTable() {
                 {formatDate(u.createdAt)}
               </td>
 
-              <td className="py-3 md:py-4 text-center actions-cell whitespace-nowrap relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenuFor((p) => (p === uid ? null : uid));
-                  }}
-                  className="p-1.5 md:p-2 rounded-md hover:bg-[#22c55e]/20"
-                >
-                  <MoreVertical className="text-white" size={18} />
-                </button>
+<td className="py-3 md:py-4 text-center whitespace-nowrap relative overflow-visible">
+  <div className="relative inline-block overflow-visible">
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpenMenuFor((p) => (p === uid ? null : uid));
+      }}
+      className="p-1.5 md:p-2 rounded-md hover:bg-[#22c55e]/20 focus:outline-none"
+    >
+      <MoreVertical className="text-white" size={18} />
+    </button>
 
-                {openMenuFor === uid && (
-                  <div
-                    className="absolute right-0 md:right-16 mt-2 w-40 md:w-44 bg-[#1c1c1c] border border-[#333] rounded-md shadow-lg text-white z-[999999] menu-popup"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      className="w-full px-3 md:px-4 py-2 text-left text-sm hover:bg-[#22c55e]/20"
-                      onClick={() => {
-                        setOpenMenuFor(null);
-                        handleViewDetails(u);
-                      }}
-                    >
-                      View Details
-                    </button>
-                    {u.status !== "read" && (
-                      <button
-                        className="w-full px-3 md:px-4 py-2 text-left text-sm hover:bg-[#22c55e]/20"
-                        onClick={() => {
-                          setOpenMenuFor(null);
-                          handleMarkAsRead(u);
-                        }}
-                      >
-                        Mark as Read
-                      </button>
-                    )}
-                    <button
-                      className="w-full px-3 md:px-4 py-2 text-left text-sm text-red-400 hover:bg-[#22c55e]/20"
-                      onClick={() => {
-                        setOpenMenuFor(null);
-                        confirmDelete(uid);
-                      }}
-                    >
-                      Delete Contact
-                    </button>
-                  </div>
-                )}
-              </td>
+    {openMenuFor === uid && (
+      <div
+        className="absolute z-[999999] right-0 top-full mt-2 w-44 whitespace-nowrap
+                   bg-[#1c1c1c] border border-[#333] rounded-md shadow-xl text-white
+                   overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="block w-full px-4 py-2.5 text-left text-sm hover:bg-[#22c55e]/20 transition-colors"
+          onClick={() => {
+            setOpenMenuFor(null);
+            handleViewDetails(u);
+          }}
+        >
+          View Details
+        </button>
+
+        {u.status !== "read" && (
+          <button
+            type="button"
+            className="block w-full px-4 py-2.5 text-left text-sm hover:bg-[#22c55e]/20 transition-colors border-t border-[#333]"
+            onClick={() => {
+              setOpenMenuFor(null);
+              handleMarkAsRead(u);
+            }}
+          >
+            Mark as Read
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="block w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-[#22c55e]/20 transition-colors border-t border-[#333]"
+          onClick={() => {
+            setOpenMenuFor(null);
+            confirmDelete(uid);
+          }}
+        >
+          Delete Contact
+        </button>
+      </div>
+    )}
+  </div>
+</td>
             </tr>
           );
         })
