@@ -36,7 +36,8 @@ import {
 } from "@/lib/feature/userMachine/usermachineApi";
 import { AppDispatch } from "@/lib/store/store";
 import { useUsers } from "@/hooks/Userdetail";
-import { getUserBalance } from "@/lib/feature/userMachine/balanceSlice"; // Added import for balance fetching
+import { getUserBalance } from "@/lib/feature/userMachine/balanceSlice";
+import { getUserShareDetails } from "@/lib/feature/shareMachine/shareMachineSlice"; // Added import for balance fetching
 import { fetchUserWithdrawals } from "@/lib/feature/withdraw/withdrawalSlice";
 import DashboardLayout from "@/components/Dashboard/DasboardLayout/DasboardLayout";
 import DashboardHeader from "@/components/Dashboard/DashboardHeader/DashboardHeader";
@@ -79,11 +80,33 @@ interface RootState {
     isLoading: boolean;
     error: string | null;
   };
+  // ✅ Add shareMachine to RootState
+  shareMachine: {
+    specialMachine: any | null;
+    userShares: {
+      shares: any[];
+      summary: {
+        totalShares: number;
+        totalInvestment: number;
+        expectedMonthlyProfit: number;
+        totalProfitEarned: number;
+      } | null;
+    };
+    loading: boolean;
+    error: string | null;
+    purchaseSuccess: boolean;
+    saleSuccess: boolean;
+    updateSuccess: boolean;
+  };
 }
 const UserDetailsPage = () => {
   const { userId } = useParams();
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+
+const shareMachineState = useSelector((state: RootState) => state.shareMachine);
+const userShares = shareMachineState?.userShares?.shares || [];
+const sharesSummary = shareMachineState?.userShares?.summary || null;
 
   const [activeTab, setActiveTab] = useState("overview");
   const [dataFetched, setDataFetched] = useState(false);
@@ -131,6 +154,7 @@ const UserDetailsPage = () => {
           }),
         ),
         dispatch(getUserBalance(userId)),
+        dispatch(getUserShareDetails(userId as string)),
       ];
 
       // Wait for all promises to resolve
@@ -168,13 +192,14 @@ const UserDetailsPage = () => {
 
 
   const stats = [
-    {
-      title: "Total Machines",
-      value: userMachines?.length || 0,
-      note: "Registered Machine on this User",
-      gradient: true,
-      navigate: ""
-    },
+{
+    title: "Total Machines",
+    // ✅ Count both regular machines AND share-based machines
+    value: (userMachines?.length || 0) + (userShares?.length || 0),
+    note: `${userMachines?.length || 0} Regular · ${userShares?.length || 0} Share-Based`,
+    gradient: true,
+    navigate: ""
+  },
     {
       title: "Total Balance",
       value: formatAmount(userBalance || userProfit?.totalProfit || 0),
@@ -338,81 +363,201 @@ const UserDetailsPage = () => {
 
             </TabsContent>
 
+            
             {/* TAB 2 — Assigned Machines */}
-            <TabsContent value="assigned">
+<TabsContent value="assigned">
+  <div className="bg-[#1b1b1b] px-6 py-6 rounded-md">
 
-              <div className="bg-[#1b1b1b] px-6 py-6 rounded-md">
-                <div>
-                  <h1 className="text-white text-[25px] font-semibold mb-5">Assigned Machines</h1>
-                </div>
+    {/* ====== REGULAR MACHINES TABLE ====== */}
+    <div className="mb-10">
+      <h1 className="text-white text-[25px] font-semibold mb-5">
+        Assigned Machines
+      </h1>
 
-                <div>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-gray-200 border-b border-[#ffffff65] text-[16px]">
-                        <th className="py-3 text-left font-medium">Machine Name</th>
-                        <th className="py-3 text-left font-medium">Assigned Date</th>
-                        <th className="py-3 text-center font-medium">Current Profit </th>
-                        <th className="py-3 text-center font-medium">Status</th>
-                      </tr>
-                    </thead>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-gray-200 border-b border-[#ffffff65] text-[16px]">
+            <th className="py-3 text-left font-medium">Machine Name</th>
+            <th className="py-3 text-left font-medium">Assigned Date</th>
+            <th className="py-3 text-center font-medium">Current Profit</th>
+            <th className="py-3 text-center font-medium">Status</th>
+          </tr>
+        </thead>
 
-                    <tbody>
-                      {isLoading ? (
-                        <tr>
-                          <td colSpan={7} className="py-8 text-center text-gray-300">
-                            Loading...
-                          </td>
-                        </tr>
-                      ) : userMachines.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-8 text-center text-gray-300">
-                            No machines found.
-                          </td>
-                        </tr>
-                      ) : (
-                        userMachines.map((item) => (
-                          <tr key={item._id} className="border-b border-[#ffffff65] hover:bg-[#0f0f0f78] duration-300">
+        <tbody>
+          {isLoading ? (
+            <tr>
+              <td colSpan={4} className="py-8 text-center text-gray-300">
+                Loading...
+              </td>
+            </tr>
+          ) : userMachines.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="py-8 text-center text-gray-300">
+                No machines found.
+              </td>
+            </tr>
+          ) : (
+            userMachines.map((item) => (
+              <tr
+                key={item._id}
+                className="border-b border-[#ffffff65] hover:bg-[#0f0f0f78] duration-300"
+              >
+                {/* MACHINE NAME */}
+                <td className="py-4 flex items-center gap-3 text-white">
+                  <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-md text-green-400">
+                    {(item.machine?.machineName || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <span className="font-medium text-[15px] block">
+                      {item.machine?.machineName || "N/A"}
+                    </span>
+                  </div>
+                </td>
 
+                {/* DATE */}
+                <td className="py-4 text-gray-200 text-start">
+                  {formatDate(item.assignedDate)}
+                </td>
 
-                            {/* MACHINE */}
-                            <td className="py-4 flex items-center gap-3 text-white">
+                {/* PROFIT */}
+                <td className="py-4 text-center text-[16px] font-[600] text-white">
+                  ${formatAmount(item.monthlyProfitAccumulated)}
+                </td>
 
+                {/* STATUS */}
+                <td className="py-4 text-center">
+                  <span
+                    className={`px-2 py-1 rounded-full text-[13px] ${
+                      (item.status ?? "").toLowerCase() === "active"
+                        ? "bg-green-800/40 text-green-400"
+                        : "bg-[#66000095] text-red-400"
+                    }`}
+                  >
+                    {item.status ?? "-"}
+                  </span>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
 
-                              <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-md text-green-400">
-                                {(item.machine?.machineName || "U").charAt(0).toUpperCase()}
-                              </div>
+    {/* ====== SHARE-BASED MACHINES TABLE ====== */}
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-white text-[25px] font-semibold">
+          Share-Based Machines
+        </h1>
 
-                              <div>
-                                <span className="font-medium text-[15px] block">{item.machine?.machineName || "N/A"}</span>
-                              </div>
-                            </td>
+        {/* ✅ Show summary badges if data exists */}
+        {sharesSummary && (
+          <div className="flex items-center gap-3">
+            <span className="bg-[#2a2a2a] text-gray-300 text-[13px] px-3 py-1 rounded-full">
+              Total Shares:{" "}
+              <span className="text-white font-semibold">
+                {sharesSummary.totalShares}
+              </span>
+            </span>
+            <span className="bg-[#2a2a2a] text-gray-300 text-[13px] px-3 py-1 rounded-full">
+              Total Invested:{" "}
+              <span className="text-green-400 font-semibold">
+                ${formatAmount(sharesSummary.totalInvestment)}
+              </span>
+            </span>
+            <span className="bg-[#2a2a2a] text-gray-300 text-[13px] px-3 py-1 rounded-full">
+              Monthly Profit:{" "}
+              <span className="text-green-400 font-semibold">
+                ${formatAmount(sharesSummary.expectedMonthlyProfit)}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
 
-                            {/* DATE */}
-                            <td className="py-4 text-gray-200 text-start">{formatDate(item.assignedDate)}</td>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-gray-200 border-b border-[#ffffff65] text-[16px]">
+            <th className="py-3 text-left font-medium">Machine Name</th>
+            <th className="py-3 text-left font-medium">Purchase Date</th>
+            <th className="py-3 text-center font-medium">Shares Owned</th>
+            <th className="py-3 text-center font-medium">Total Invested</th>
+            <th className="py-3 text-center font-medium">Monthly Profit</th>
+            <th className="py-3 text-center font-medium">Total Earned</th>
+          </tr>
+        </thead>
 
-                            {/* PROFIT */}
-                            <td className="py-4 text-center text-[16px] font-[600] text-white">${formatAmount(item.monthlyProfitAccumulated)}</td>
+        <tbody>
+          {shareMachineState?.loading ? (
+            <tr>
+              <td colSpan={6} className="py-8 text-center text-gray-300">
+                Loading shares...
+              </td>
+            </tr>
+          ) : userShares.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="py-8 text-center text-gray-300">
+                No share-based machines found.
+              </td>
+            </tr>
+          ) : (
+            userShares.map((share) => (
+              <tr
+                key={share.id}
+                className="border-b border-[#ffffff65] hover:bg-[#0f0f0f78] duration-300"
+              >
+                {/* MACHINE NAME */}
+                <td className="py-4 text-white">
+                  <div className="flex items-center gap-3">
+                    {/* ✅ Green badge to distinguish share-based */}
+                    <div className="w-10 h-10 rounded-full bg-[#1a3a2a] flex items-center justify-center text-md text-green-400 border border-green-800">
+                      {(share.machineName || "S").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="font-medium text-[15px] block">
+                        {share.machineName || "N/A"}
+                      </span>
+                      {/* ✅ Share badge label */}
+                      <span className="text-[11px] text-green-500 bg-green-900/30 px-2 py-0.5 rounded-full">
+                        Share-Based
+                      </span>
+                    </div>
+                  </div>
+                </td>
 
-                            {/* STATUS */}
-                            <td className="py-4 text-center">
-                              <span
-                                className={`px-2 py-1 rounded-full text-[13px] ${(item.status ?? "").toLowerCase() === "active" ? "bg-green-800/40 text-green-400" : "bg-[#66000095] text-red"
-                                  }`}
-                              >
-                                {item.status ?? "-"}
-                              </span>
-                            </td>
+                {/* PURCHASE DATE */}
+                <td className="py-4 text-gray-200 text-start">
+                  {formatDate(share.purchaseDate)}
+                </td>
 
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                {/* SHARES OWNED */}
+                <td className="py-4 text-center text-white font-semibold">
+                  {share.numberOfShares}
+                </td>
 
-            </TabsContent>
+                {/* TOTAL INVESTED */}
+                <td className="py-4 text-center text-[16px] font-[600] text-white">
+                  ${formatAmount(share.totalInvestment)}
+                </td>
+
+                {/* EXPECTED MONTHLY PROFIT */}
+                <td className="py-4 text-center text-[16px] font-[600] text-green-400">
+                  ${formatAmount(share.expectedMonthlyProfit)}
+                </td>
+
+                {/* TOTAL PROFIT EARNED */}
+                <td className="py-4 text-center text-[16px] font-[600] text-white">
+                  ${formatAmount(share.totalProfitEarned ?? 0)}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</TabsContent>
 
             {/* TAB 3 — Add Machine */}
             <TabsContent value="addmachine">
