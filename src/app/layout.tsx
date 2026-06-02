@@ -4,6 +4,7 @@ import { Poppins } from 'next/font/google';
 import Script from "next/script"; // ✅ Import Script
 
 import StoreProvider from "@/lib/feature/provider/StoreProvider";
+import GlobalWidget from "@/components/GlobalWidget";
 
 
 const poppins = Poppins({
@@ -39,6 +40,7 @@ export default function RootLayout({
         <div className="dark:bg-boxdark-2 dark:text-bodydark">
           <StoreProvider>
             {children}
+            <GlobalWidget/>
           </StoreProvider>
         </div>
       </body>
