@@ -225,57 +225,80 @@ const AdminWithdrawalDashboard = () => {
         ) : (
           <div className="rounded-xl border border-zinc-800/50 overflow-hidden">
             <Table>
-              <TableHeader>
-                <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
-                  <TableHead className="text-zinc-400 font-medium">User</TableHead>
-                  <TableHead className="text-zinc-400 font-medium">Request Date</TableHead>
-                  <TableHead className="text-right text-zinc-400 font-medium">Amount</TableHead>
-                  <TableHead className="text-right text-zinc-400 font-medium">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredWithdrawals.map((withdrawal) => (
-                  <TableRow
-                    key={withdrawal._id}
-                    className="border-zinc-800 hover:bg-zinc-900/50"
-                  >
-                    <TableCell>
-                      <div className="flex flex-col">
-                      <span className="text-white font-bold text-lg">{withdrawal.user.firstName} {""} {withdrawal.user.lastName}</span>
+             <TableHeader>
+  <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
+    <TableHead className="text-zinc-400 font-medium">User</TableHead>
+    <TableHead className="text-zinc-400 font-medium">Request Date</TableHead>
+    <TableHead className="text-zinc-400 font-medium">Wallet Details</TableHead>
+    <TableHead className="text-right text-zinc-400 font-medium">Amount</TableHead>
+    <TableHead className="text-right text-zinc-400 font-medium">Actions</TableHead>
+  </TableRow>
+</TableHeader>
+<TableBody>
+  {filteredWithdrawals.map((withdrawal) => (
+    <TableRow
+      key={withdrawal._id}
+      className="border-zinc-800 hover:bg-zinc-900/50"
+    >
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="text-white font-bold text-lg">
+            {withdrawal.user.firstName} {""} {withdrawal.user.lastName}
+          </span>
+          <span className="font-medium text-white mt-1">{withdrawal.user.email}</span>
+          <span className="text-xs text-zinc-500">ID: {withdrawal._id}</span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="text-zinc-200">{formatDate(withdrawal.transactionDate)}</span>
+          <span className="text-xs text-zinc-500">
+            {new Date(withdrawal.transactionDate).toLocaleTimeString()}
+          </span>
+        </div>
+      </TableCell>
 
-                        <span className="font-medium text-white mt-1">{withdrawal.user.email}</span>
-                        <span className="text-xs text-zinc-500">ID: {withdrawal._id}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-zinc-200">{formatDate(withdrawal.transactionDate)}</span>
-                        <span className="text-xs text-zinc-500">
-                          {new Date(withdrawal.transactionDate).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex flex-col items-end">
-                        <span className="font-bold text-emerald-400">{formatAmount(withdrawal.amount)}</span>
-                        <Badge variant="outline" className="border-emerald-500/20 text-emerald-400">
-                          Pending
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        onClick={() => setSelectedWithdrawal(withdrawal)}
-                        variant="outline"
-                        size="sm"
-                        className="border-emerald-500/20 hover:bg-emerald-500/10 text-emerald-900 bg-gray-100"
-                      >
-                        Process Request
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+      {/* ✅ New Wallet Details Column */}
+      <TableCell>
+        <div className="flex flex-col gap-1">
+          <Badge
+            variant="outline"
+            className="w-fit border-blue-500/20 bg-blue-500/10 text-blue-400 text-xs"
+          >
+            {withdrawal.network}
+          </Badge>
+          <span
+            className="text-xs text-zinc-400 font-mono max-w-[180px] truncate"
+            title={withdrawal.walletAddress}
+          >
+            {withdrawal.walletAddress}
+          </span>
+        </div>
+      </TableCell>
+
+      <TableCell className="text-right">
+        <div className="flex flex-col items-end">
+          <span className="font-bold text-emerald-400">
+            {formatAmount(withdrawal.amount)}
+          </span>
+          <Badge variant="outline" className="border-emerald-500/20 text-emerald-400">
+            Pending
+          </Badge>
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <Button
+          onClick={() => setSelectedWithdrawal(withdrawal)}
+          variant="outline"
+          size="sm"
+          className="border-emerald-500/20 hover:bg-emerald-500/10 text-emerald-900 bg-gray-100"
+        >
+          Process Request
+        </Button>
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
             </Table>
           </div>
         )}
@@ -346,6 +369,14 @@ const AdminWithdrawalDashboard = () => {
                     {selectedWithdrawal && formatAmount(selectedWithdrawal.amount)}
                   </p>
                 </div>
+                 <div className="col-span-2">
+    <label className="text-xs text-zinc-500">Wallet Address</label>
+    <p
+      className="font-mono text-sm text-white break-all bg-zinc-800 rounded-md px-3 py-2 mt-1"
+    >
+      {selectedWithdrawal?.walletAddress}
+    </p>
+  </div>
               </div>
             </div>
             
