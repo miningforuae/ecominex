@@ -11,6 +11,8 @@ export interface Withdrawal {
     type: string;
     amount: number;
     status: 'pending' | 'approved' | 'rejected';
+    network: string,
+    walletAddress: string,
     transactionDate: string;
     adminComment?: string;
     processedBy?: string;
