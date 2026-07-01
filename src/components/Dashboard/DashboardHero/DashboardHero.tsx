@@ -43,7 +43,8 @@ export default function DashboardHero() {
     );
 
     console.log(remoteUsers);
-
+console.log("Stats data:", statss);
+console.log("Stats object:", statss?.stats);
 
 
     useEffect(() => {
