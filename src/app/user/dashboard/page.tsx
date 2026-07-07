@@ -16,6 +16,10 @@ import { AppDispatch, RootState } from '@/lib/store/store';
 import { useSelector, useDispatch } from "react-redux";
 import { requestWithdrawal } from "@/lib/feature/withdraw/withdrawalSlice";
 import "react-toastify/dist/ReactToastify.css";
+<<<<<<< HEAD
+=======
+import axiosInstance from "@/utils/axiosInstance";
+>>>>>>> master
 
 
 export default function Dashboard() {
@@ -25,6 +29,11 @@ export default function Dashboard() {
   type NetworkType = "TRC20" | "ERC20";
 
   const [depositNetwork, setDepositNetwork] = useState<NetworkType | "">("");
+<<<<<<< HEAD
+=======
+  const [depositAmount, setDepositAmount] = useState("");
+  const [isCreatingNowPayment, setIsCreatingNowPayment] = useState(false);
+>>>>>>> master
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
@@ -63,7 +72,70 @@ const auth = useSelector((state: RootState) => state.auth);
     }
   }, [dispatch, user?.id,auth]);
 
+<<<<<<< HEAD
  const handleWithdrawrequest = async () => {
+=======
+ 
+  const handleNowPaymentsDeposit = async () => {
+    const amount = Number(depositAmount);
+
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid deposit amount");
+      return;
+    }
+
+    if (!depositNetwork) {
+      toast.error("Please select a payment network");
+      return;
+    }
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+    if (!token) {
+      toast.error("Not authorized, please login again");
+      return;
+    }
+
+    const payCurrency = depositNetwork === "TRC20" ? "usdttrc20" : "usdterc20";
+
+    try {
+      setIsCreatingNowPayment(true);
+
+      const response = await axiosInstance.post(
+        "/api/v1/deposit/nowpayments",
+        {
+          amount,
+          payCurrency,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const invoiceUrl =
+        response.data?.invoiceUrl ||
+        response.data?.data?.invoiceUrl ||
+        response.data?.invoice_url ||
+        response.data?.data?.invoice_url;
+
+      if (!invoiceUrl) {
+        toast.error("Payment invoice URL not received from server");
+        return;
+      }
+
+      toast.success("Redirecting to NOWPayments...");
+      window.location.href = invoiceUrl;
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to create NOWPayments invoice");
+    } finally {
+      setIsCreatingNowPayment(false);
+    }
+  };
+
+const handleWithdrawrequest = async () => {
+>>>>>>> master
    if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
      toast.error("Minimun Amount is 50$");
      return;
@@ -228,6 +300,21 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
               </DialogHeader>
 
               <div className="space-y-4">
+<<<<<<< HEAD
+=======
+                <div className="space-y-2">
+                  <Label className="text-white font-medium">Enter Amount</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    placeholder="Enter amount in USD"
+                    className="bg-slate-900 border-slate-700 text-white"
+                  />
+                </div>
+>>>>>>> master
 
                 {/* Select Network Title */}
                 <Label className="text-white font-medium">Select Network</Label>
@@ -259,6 +346,7 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
                   </div>
                 </div>
 
+<<<<<<< HEAD
                 {/* QR + Address + Buttons */}
                 {depositNetwork && (
                   <div className="space-y-3 pt-2">
@@ -300,6 +388,21 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
                       className="w-full bg-green-600 text-white"
                     >
                       Share on WhatsApp
+=======
+                {/* NOWPayments Button */}
+                {depositNetwork && (
+                  <div className="space-y-3 pt-2">
+                    <div className="rounded-lg border border-green-700 bg-green-950/30 p-3 text-sm text-green-200">
+                      You selected {depositNetwork}. Click below to create a secure NOWPayments invoice and proceed with payment.
+                    </div>
+
+                    <Button
+                      onClick={handleNowPaymentsDeposit}
+                      disabled={isCreatingNowPayment}
+                      className="w-full bg-green-600 text-white hover:bg-green-700"
+                    >
+                      {isCreatingNowPayment ? "Creating payment..." : "Pay with NOWPayments"}
+>>>>>>> master
                     </Button>
                   </div>
                 )}

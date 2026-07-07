@@ -12,6 +12,19 @@ const axiosInstance = axios.create({
   }
 });
 
+<<<<<<< HEAD
+=======
+axiosInstance.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+>>>>>>> master
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
