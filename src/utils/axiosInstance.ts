@@ -12,8 +12,6 @@ const axiosInstance = axios.create({
   }
 });
 
-<<<<<<< HEAD
-=======
 axiosInstance.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
@@ -24,7 +22,6 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
->>>>>>> master
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -16,10 +16,7 @@ import { AppDispatch, RootState } from '@/lib/store/store';
 import { useSelector, useDispatch } from "react-redux";
 import { requestWithdrawal } from "@/lib/feature/withdraw/withdrawalSlice";
 import "react-toastify/dist/ReactToastify.css";
-<<<<<<< HEAD
-=======
 import axiosInstance from "@/utils/axiosInstance";
->>>>>>> master
 
 
 export default function Dashboard() {
@@ -29,11 +26,8 @@ export default function Dashboard() {
   type NetworkType = "TRC20" | "ERC20";
 
   const [depositNetwork, setDepositNetwork] = useState<NetworkType | "">("");
-<<<<<<< HEAD
-=======
   const [depositAmount, setDepositAmount] = useState("");
   const [isCreatingNowPayment, setIsCreatingNowPayment] = useState(false);
->>>>>>> master
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
@@ -72,9 +66,6 @@ const auth = useSelector((state: RootState) => state.auth);
     }
   }, [dispatch, user?.id,auth]);
 
-<<<<<<< HEAD
- const handleWithdrawrequest = async () => {
-=======
  
   const handleNowPaymentsDeposit = async () => {
     const amount = Number(depositAmount);
@@ -135,7 +126,6 @@ const auth = useSelector((state: RootState) => state.auth);
   };
 
 const handleWithdrawrequest = async () => {
->>>>>>> master
    if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
      toast.error("Minimun Amount is 50$");
      return;
@@ -300,8 +290,6 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
               </DialogHeader>
 
               <div className="space-y-4">
-<<<<<<< HEAD
-=======
                 <div className="space-y-2">
                   <Label className="text-white font-medium">Enter Amount</Label>
                   <Input
@@ -314,7 +302,6 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
                     className="bg-slate-900 border-slate-700 text-white"
                   />
                 </div>
->>>>>>> master
 
                 {/* Select Network Title */}
                 <Label className="text-white font-medium">Select Network</Label>
@@ -346,49 +333,6 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
                   </div>
                 </div>
 
-<<<<<<< HEAD
-                {/* QR + Address + Buttons */}
-                {depositNetwork && (
-                  <div className="space-y-3 pt-2">
-
-                    {/* QR Code */}
-                    <div className="flex justify-center">
-                      <img
-                        src={depositAddresses[depositNetwork].qr}
-                        alt="QR Code"
-                        className="w-36 h-36 rounded-lg border border-slate-700"
-                      />
-                    </div>
-
-                    {/* Address */}
-                    <div className="p-3 bg-slate-800 rounded border border-slate-700 text-white text-center text-sm break-all">
-                      {depositAddresses[depositNetwork].address}
-                    </div>
-
-                    {/* Copy Address */}
-                    <Button
-                      onClick={() =>
-                        navigator.clipboard.writeText(
-                          depositAddresses[depositNetwork].address
-                        )
-                      }
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Copy Address
-                    </Button>
-
-                    {/* WhatsApp Share */}
-                    <Button
-                      onClick={() => {
-                        const msg = `Send USDT to this address:\n\n${depositAddresses[depositNetwork].address}`;
-                        const url = `https://wa.me/18079074455?text=${encodeURIComponent(msg)}`;
-                        window.open(url, "_blank");
-                      }}
-                      className="w-full bg-green-600 text-white"
-                    >
-                      Share on WhatsApp
-=======
                 {/* NOWPayments Button */}
                 {depositNetwork && (
                   <div className="space-y-3 pt-2">
@@ -402,7 +346,6 @@ const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
                       className="w-full bg-green-600 text-white hover:bg-green-700"
                     >
                       {isCreatingNowPayment ? "Creating payment..." : "Pay with NOWPayments"}
->>>>>>> master
                     </Button>
                   </div>
                 )}

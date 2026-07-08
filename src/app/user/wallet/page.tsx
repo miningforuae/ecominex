@@ -35,10 +35,7 @@ import {
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-<<<<<<< HEAD
-=======
 import axiosInstance from "@/utils/axiosInstance";
->>>>>>> master
 
 
 export default function Wallet() {
@@ -84,11 +81,8 @@ console.log(withdrawals)
   type NetworkType = "TRC20" | "ERC20";
    
   const [depositNetwork, setDepositNetwork] = useState<NetworkType | "">("");
-<<<<<<< HEAD
-=======
   const [depositAmount, setDepositAmount] = useState("");
   const [isCreatingNowPayment, setIsCreatingNowPayment] = useState(false);
->>>>>>> master
 
   const depositAddresses = {
     ERC20: {
@@ -102,8 +96,6 @@ console.log(withdrawals)
   };
 
 
-<<<<<<< HEAD
-=======
 
   const handleNowPaymentsDeposit = async () => {
     const amount = Number(depositAmount);
@@ -163,7 +155,6 @@ console.log(withdrawals)
     }
   };
 
->>>>>>> master
 const handleWithdrawrequest = async () => {
   if (!withdrawAmount || parseFloat(withdrawAmount) < 59.2) {
     toast.error("Minimun Amount is 50$");
@@ -256,8 +247,6 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
               </DialogHeader>
 
               <div className="space-y-4">
-<<<<<<< HEAD
-=======
                 <div className="space-y-2">
                   <Label className="text-white font-medium">Enter Amount</Label>
                   <Input
@@ -270,7 +259,6 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
                     className="bg-slate-900 border-slate-700 text-white"
                   />
                 </div>
->>>>>>> master
 
                 {/* Select Network Title */}
                 <Label className="text-white font-medium">Select Network</Label>
@@ -302,49 +290,6 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
                   </div>
                 </div>
 
-<<<<<<< HEAD
-                {/* QR + Address + Buttons */}
-                {depositNetwork && (
-                  <div className="space-y-3 pt-2">
-
-                    {/* QR Code */}
-                    <div className="flex justify-center">
-                      <img
-                        src={depositAddresses[depositNetwork].qr}
-                        alt="QR Code"
-                        className="w-36 h-36 rounded-lg border border-slate-700"
-                      />
-                    </div>
-
-                    {/* Address */}
-                    <div className="p-3 bg-slate-800 rounded border border-slate-700 text-white text-center text-sm break-all">
-                      {depositAddresses[depositNetwork].address}
-                    </div>
-
-                    {/* Copy Address */}
-                    <Button
-                      onClick={() =>
-                        navigator.clipboard.writeText(
-                          depositAddresses[depositNetwork].address
-                        )
-                      }
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Copy Address
-                    </Button>
-
-                    {/* WhatsApp Share */}
-                    <Button
-                      onClick={() => {
-                        const msg = `Send USDT to this address:\n\n${depositAddresses[depositNetwork].address}`;
-                        const url = `https://wa.me/18079074455?text=${encodeURIComponent(msg)}`;
-                        window.open(url, "_blank");
-                      }}
-                      className="w-full bg-green-600 text-white"
-                    >
-                      Share on WhatsApp
-=======
                 {/* NOWPayments Button */}
                 {depositNetwork && (
                   <div className="space-y-3 pt-2">
@@ -358,7 +303,6 @@ if (!validateWalletAddress(withdrawAddress, withdrawNetwork as NetworkType)) {
                       className="w-full bg-green-600 text-white hover:bg-green-700"
                     >
                       {isCreatingNowPayment ? "Creating payment..." : "Pay with NOWPayments"}
->>>>>>> master
                     </Button>
                   </div>
                 )}
