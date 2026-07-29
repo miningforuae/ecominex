@@ -243,7 +243,7 @@ export default function DashboardHero() {
         <div className="bg-[#1b1b1b] shadow-md rounded-[20px] py-6.5 w-full max-w-full md:max-w-xl">
           <div className="flex items-center justify-between mb-4 px-4 sm:px-6">
             <h2 className="text-[20px] sm:text-[25.5px] font-[500] text-white">
-              Recent Withdrawals
+              Pending Withdrawals
             </h2>
             <Link href="/Dashboard/AllTransaction/">
               <button className="px-1 text-center py-1 text-xs sm:text-sm font-medium bg-transparent border-green-500 border-b-[1.5px] flex items-center gap-2 text-gray-200 hover:text-green-500">
