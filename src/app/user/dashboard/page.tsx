@@ -218,41 +218,45 @@ const handleWithdrawrequest = async () => {
 
 // Usage
 const totalBalance = hasBalances(userBalance) ? userBalance.balances.total : 0;
+const miningBalance = hasBalances(userBalance) ? userBalance.balances.mining : 0;
 
-  const stats = [
-    {
-      title: "Total Balance",
-      value: balanceLoading || !userBalance
-        ? "Loading..."
-        : `$${Number(totalBalance ).toLocaleString()}`,
-      icon: DollarSign,
-      gradient: "bg-green-600",
-    },
-    {
-      title: "Active Machines",
-      value: balanceLoading || !userMachines
-        ? "Loading..."
-        : `${userMachines.filter((m) => m.status?.toLowerCase() === "active").length}`,
-      icon: Server,
-      gradient: "bg-green-600",
-    },
-    {
-      title: "Profit Earned",
-      value: profitLoading
-        ? "Loading..."
-        : `$${(referralData?.reduce((sum, r) => sum + Number(r.discount || 0), 0) ?? 0).toFixed(2)}`,
-      icon: TrendingUp,
-      gradient: "bg-green-600",
-    },
-    {
-      title: "Referrals",
-      value: loading
-        ? "Loading..."
-        : `${referralData?.filter((ref) => ref.referralStatus === "active").length ?? 0}`,
-      icon: Users,
-      gradient: "bg-green-600",
-    },
-  ];
+const stats = [
+  {
+    title: "Total Balance",
+    value: balanceLoading || !userBalance
+      ? "Loading..."
+      : `$${Number(totalBalance).toLocaleString()}`,
+    icon: DollarSign,
+    gradient: "bg-green-600",
+  },
+  {
+    title: "Active Machines",
+    value: balanceLoading || !userMachines
+      ? "Loading..."
+      : `${userMachines.filter((m) => m.status?.toLowerCase() === "active").length}`,
+    icon: Server,
+    gradient: "bg-green-600",
+  },
+  {
+    title: "Profit Earned",
+    value: balanceLoading || !userBalance
+      ? "Loading..."
+      : `$${Number(miningBalance).toLocaleString(undefined, { 
+          minimumFractionDigits: 2, 
+          maximumFractionDigits: 2 
+        })}`,
+    icon: TrendingUp,
+    gradient: "bg-green-600",
+  },
+  {
+    title: "Referrals",
+    value: loading
+      ? "Loading..."
+      : `${referralData?.filter((ref) => ref.referralStatus === "active").length ?? 0}`,
+    icon: Users,
+    gradient: "bg-green-600",
+  },
+];
 
 
 
