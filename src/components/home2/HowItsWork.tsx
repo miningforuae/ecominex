@@ -46,7 +46,7 @@ function StepCard({
         <article
             className={clsx(
                 "relative rounded-2xl bg-transparent ",
-                " text-gray-300",
+                "text-gray-300",
                 ""
             )}
         >
